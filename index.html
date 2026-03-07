@@ -3,124 +3,104 @@
  <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>宇宙タイピングクエスト</title>
+  <title>中１宇宙タイピングクエスト</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="/_sdk/element_sdk.js"></script>
   <script src="/_sdk/data_sdk.js"></script>
+
+  <!-- Firebase (Firestore) for ranking storage -->
+  <!-- NOTE: compat builds are used to keep the code simple in a single HTML file -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&amp;family=Noto+Sans+JP:wght@400;500;700&amp;display=swap" rel="stylesheet">
   <style>
-    body {
-      box-sizing: border-box;
-    }
-    
-    .font-game {
-      font-family: 'Orbitron', 'Noto Sans JP', sans-serif;
-    }
-    
-    .font-jp {
-      font-family: 'Noto Sans JP', sans-serif;
-    }
-    
+    body { box-sizing: border-box; }
+
+    .font-game { font-family: 'Orbitron', 'Noto Sans JP', sans-serif; }
+    .font-jp { font-family: 'Noto Sans JP', sans-serif; }
+
     @keyframes float {
       0%, 100% { transform: translateY(0) rotate(0deg); }
       50% { transform: translateY(-15px) rotate(5deg); }
     }
-    
+
     @keyframes shake {
       0%, 100% { transform: translateX(0); }
       25% { transform: translateX(-10px); }
       75% { transform: translateX(10px); }
     }
-    
+
     @keyframes explosion {
       0% { transform: scale(1) rotate(0deg); opacity: 1; }
       50% { transform: scale(1.5) rotate(180deg); opacity: 0.5; }
       100% { transform: scale(2) rotate(360deg); opacity: 0; }
     }
-    
+
     @keyframes ship-move-forward {
       0% { transform: translateY(0) scale(1); }
       50% { transform: translateY(-30px) scale(1.2); }
       100% { transform: translateY(0) scale(1); }
     }
-    
+
     @keyframes stars-move {
       0% { transform: translateY(0); }
       100% { transform: translateY(100%); }
     }
-    
+
     @keyframes fadeIn {
       0% { opacity: 0; transform: translateY(-20px); }
       100% { opacity: 1; transform: translateY(0); }
     }
-    
+
     @keyframes planet-arrive {
       0% { transform: scale(0) rotate(0deg); opacity: 0; }
       60% { transform: scale(1.2) rotate(180deg); opacity: 1; }
       100% { transform: scale(1) rotate(360deg); opacity: 1; }
     }
-    
+
     @keyframes rocket-flight {
-      0% { 
+      0% {
         bottom: 0%;
         left: 50%;
         transform: translateX(-50%) scale(1) rotate(0deg);
         opacity: 1;
       }
-      100% { 
+      100% {
         bottom: var(--flight-end);
         left: 50%;
         transform: translateX(-50%) scale(1.5) rotate(15deg);
         opacity: 1;
       }
     }
-    
+
     @keyframes planet-pass {
       0% { opacity: 0; transform: scale(0.5); }
       50% { opacity: 1; transform: scale(1.2); }
       100% { opacity: 0.3; transform: scale(1); }
     }
-    
+
     @keyframes stars-twinkle {
       0%, 100% { opacity: 0.3; }
       50% { opacity: 1; }
     }
-    
-    .animate-float {
-      animation: float 3s ease-in-out infinite;
-    }
-    
-    .animate-shake {
-      animation: shake 0.4s ease-in-out;
-    }
-    
-    .animate-explosion {
-      animation: explosion 0.5s ease-out forwards;
-    }
-    
-    .animate-ship-move {
-      animation: ship-move-forward 0.5s ease-out;
-    }
-    
-    .animate-fadeIn {
-      animation: fadeIn 0.5s ease-out;
-    }
-    
-    .animate-planet-arrive {
-      animation: planet-arrive 1s ease-out;
-    }
-    
-    .stars-bg {
-      position: relative;
-      overflow: hidden;
-    }
-    
+
+    .animate-float { animation: float 3s ease-in-out infinite; }
+    .animate-shake { animation: shake 0.4s ease-in-out; }
+    .animate-explosion { animation: explosion 0.5s ease-out forwards; }
+    .animate-ship-move { animation: ship-move-forward 0.5s ease-out; }
+    .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
+    .animate-planet-arrive { animation: planet-arrive 1s ease-out; }
+
+    .stars-bg { position: relative; overflow: hidden; }
+
     .stars-bg::before {
       content: '';
       position: absolute;
       width: 200%;
       height: 200%;
-      background-image: 
+      background-image:
         radial-gradient(2px 2px at 20% 30%, white, transparent),
         radial-gradient(2px 2px at 60% 70%, white, transparent),
         radial-gradient(1px 1px at 50% 50%, white, transparent),
@@ -132,13 +112,13 @@
       background-position: 0 0, 40px 60px, 130px 270px, 70px 100px, 150px 50px, 90px 180px, 30px 220px;
       animation: stars-move 20s linear infinite;
     }
-    
+
     .stars-bg::after {
       content: '';
       position: absolute;
       width: 100%;
       height: 100%;
-      background-image: 
+      background-image:
         radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.8), transparent),
         radial-gradient(1px 1px at 70% 40%, rgba(255,255,255,0.8), transparent),
         radial-gradient(1px 1px at 30% 60%, rgba(255,255,255,0.8), transparent),
@@ -146,18 +126,18 @@
       background-size: 300px 300px;
       animation: stars-twinkle 3s ease-in-out infinite;
     }
-    
+
     .sign-board {
       background: linear-gradient(135deg, rgba(255, 193, 7, 0.2) 0%, rgba(255, 152, 0, 0.2) 100%);
       border: 3px solid #ffc107;
       box-shadow: 0 0 30px rgba(255, 193, 7, 0.5), inset 0 0 20px rgba(255, 193, 7, 0.2);
     }
-    
+
     .spaceship {
       font-size: 4rem;
       filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.8));
     }
-    
+
     .planet-display {
       position: fixed;
       top: 50%;
@@ -173,228 +153,163 @@
   <style>@view-transition { navigation: auto; }</style>
  </head>
  <body class="h-full m-0 p-0 overflow-auto">
+  <!-- 🎵 BGM（宇宙風・ループ再生） -->
+  <audio id="bgm" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_8c3a6a6f7c.mp3?filename=space-ambient-110624.mp3" loop preload="auto"></audio>
+  <!-- 🔊 効果音 -->
+  <audio id="sfx-explosion" src="https://cdn.pixabay.com/download/audio/2022/03/10/audio_2d6b9f1e7a.mp3?filename=explosion-6087.mp3" preload="auto"></audio>
+  <audio id="sfx-fanfare" src="https://cdn.pixabay.com/download/audio/2022/03/24/audio_9c2a1a46a8.mp3?filename=success-fanfare-trumpets-6185.mp3" preload="auto"></audio>
   <div id="app" class="w-full min-h-full stars-bg flex flex-col items-center justify-center p-6" style="background: linear-gradient(180deg, #000428 0%, #004e92 100%);"><!-- 背景の惑星表示 -->
-   <div id="planet-bg" class="planet-display">
-    🌍
-   </div><!-- スタート画面 -->
+   <div id="planet-bg" class="planet-display">🌍</div>
+
+   <!-- スタート画面 -->
    <div id="start-screen" class="text-center relative z-10">
     <div class="animate-float mb-8">
-     <div class="text-7xl mb-6">
-      🚀
-     </div>
-     <h1 id="title" class="font-game text-5xl md:text-6xl font-black tracking-wider mb-4" style="color: #00ffff; text-shadow: 0 0 40px rgba(0, 255, 255, 0.8), 0 0 80px rgba(0, 255, 255, 0.4);">宇宙タイピングクエスト</h1>
-     <div class="font-jp text-xl mb-2" style="color: #ffd700;">
-      🌌 宇宙からのミッション 🌌
-     </div>
-     <p class="font-jp text-gray-300 text-lg leading-relaxed">看板の問題を答えて打ち破り、<br>
-      宇宙の彼方へ進め！</p>
-    </div><button id="start-btn" class="font-game text-2xl px-16 py-5 rounded-2xl font-bold transition-all duration-300 hover:scale-110 hover:shadow-2xl" style="background: linear-gradient(135deg, #00ffff 0%, #0099ff 100%); color: #000428; box-shadow: 0 0 30px rgba(0, 255, 255, 0.6);"> 🚀 出発 </button>
+     <div class="text-7xl mb-6">🚀</div>
+     <h1 id="title" class="font-game text-5xl md:text-6xl font-black tracking-wider mb-4" style="color: #00ffff; text-shadow: 0 0 40px rgba(0, 255, 255, 0.8), 0 0 80px rgba(0, 255, 255, 0.4);">中１宇宙タイピングクエスト</h1>
+     <div class="font-jp text-xl mb-2" style="color: #ffd700;">🌌 宇宙からのミッション 🌌</div>
+     <p class="font-jp text-gray-300 text-lg leading-relaxed">看板の問題を答えて打ち破り、<br>宇宙の彼方へ進め！</p>
+    </div>
+    <button id="start-btn" class="font-game text-2xl px-16 py-5 rounded-2xl font-bold transition-all duration-300 hover:scale-110 hover:shadow-2xl" style="background: linear-gradient(135deg, #00ffff 0%, #0099ff 100%); color: #000428; box-shadow: 0 0 30px rgba(0, 255, 255, 0.6);"> 🚀 出発 </button>
     <div class="mt-10 font-jp text-gray-400 text-sm">
      <p>💡 看板の問題に、ひらがなをローマ字で答えよう</p>
      <p class="mt-2">5秒後にヒントが表示されます</p>
      <p class="mt-1 text-xs">（「し」→「shi」or「si」、「ん」→「n」or「nn」どちらでもOK！）</p>
     </div>
-   </div><!-- コース選択画面 -->
+   </div>
+
+   <!-- コース選択画面 -->
    <div id="course-screen" class="hidden text-center relative z-10 w-full max-w-4xl">
     <div class="mb-8">
      <h2 class="font-game text-4xl md:text-5xl font-black tracking-wider mb-4" style="color: #00ffff; text-shadow: 0 0 40px rgba(0, 255, 255, 0.8);">コース選択</h2>
      <p class="font-jp text-gray-300 text-lg">挑戦するコースを選んでください</p>
     </div>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8"><button class="course-btn p-8 rounded-2xl font-bold transition-all duration-300 hover:scale-105" data-course="creature" style="background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%); box-shadow: 0 0 30px rgba(46, 204, 113, 0.4);">
-      <div class="text-5xl mb-3">
-       🌱
-      </div>
-      <div class="font-jp text-2xl mb-2" style="color: white;">
-       いきものコース
-      </div>
-      <div class="font-jp text-sm" style="color: rgba(255, 255, 255, 0.8);">
-       植物・動物の問題
-      </div></button> <button class="course-btn p-8 rounded-2xl font-bold transition-all duration-300 hover:scale-105" data-course="matter" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); box-shadow: 0 0 30px rgba(231, 76, 60, 0.4);">
-      <div class="text-5xl mb-3">
-       ⚗️
-      </div>
-      <div class="font-jp text-2xl mb-2" style="color: white;">
-       ぶっしつコース
-      </div>
-      <div class="font-jp text-sm" style="color: rgba(255, 255, 255, 0.8);">
-       物質・化学の問題
-      </div></button> <button class="course-btn p-8 rounded-2xl font-bold transition-all duration-300 hover:scale-105" data-course="physics" style="background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); box-shadow: 0 0 30px rgba(243, 156, 18, 0.4);">
-      <div class="text-5xl mb-3">
-       💡
-      </div>
-      <div class="font-jp text-2xl mb-2" style="color: white;">
-       ひかり・おと・ちからコース
-      </div>
-      <div class="font-jp text-sm" style="color: rgba(255, 255, 255, 0.8);">
-       物理の問題
-      </div></button> <button class="course-btn p-8 rounded-2xl font-bold transition-all duration-300 hover:scale-105" data-course="earth" style="background: linear-gradient(135deg, #8e44ad 0%, #6c3483 100%); box-shadow: 0 0 30px rgba(142, 68, 173, 0.4);">
-      <div class="text-5xl mb-3">
-       🌋
-      </div>
-      <div class="font-jp text-2xl mb-2" style="color: white;">
-       だいちコース
-      </div>
-      <div class="font-jp text-sm" style="color: rgba(255, 255, 255, 0.8);">
-       地学の問題
-      </div></button>
-    </div><button id="back-to-start-btn" class="font-jp text-lg px-8 py-3 rounded-xl transition-all duration-300 hover:scale-105" style="background: rgba(255, 255, 255, 0.1); color: white; border: 2px solid rgba(255, 255, 255, 0.3);"> ← もどる </button>
-   </div><!-- ゲーム画面 -->
-   <div id="game-screen" class="hidden w-full max-w-6xl relative z-10 flex gap-6"><!-- サイドゲージ -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <button class="course-btn p-8 rounded-2xl font-bold transition-all duration-300 hover:scale-105" data-course="creature" style="background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%); box-shadow: 0 0 30px rgba(46, 204, 113, 0.4);">
+        <div class="text-5xl mb-3">🌱</div>
+        <div class="font-jp text-2xl mb-2" style="color: white;">いきものコース</div>
+        <div class="font-jp text-sm" style="color: rgba(255, 255, 255, 0.8);">植物・動物の問題</div>
+      </button>
+      <button class="course-btn p-8 rounded-2xl font-bold transition-all duration-300 hover:scale-105" data-course="matter" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); box-shadow: 0 0 30px rgba(231, 76, 60, 0.4);">
+        <div class="text-5xl mb-3">⚗️</div>
+        <div class="font-jp text-2xl mb-2" style="color: white;">ぶっしつコース</div>
+        <div class="font-jp text-sm" style="color: rgba(255, 255, 255, 0.8);">物質・化学の問題</div>
+      </button>
+      <button class="course-btn p-8 rounded-2xl font-bold transition-all duration-300 hover:scale-105" data-course="physics" style="background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); box-shadow: 0 0 30px rgba(243, 156, 18, 0.4);">
+        <div class="text-5xl mb-3">💡</div>
+        <div class="font-jp text-2xl mb-2" style="color: white;">ひかり・おと・ちからコース</div>
+        <div class="font-jp text-sm" style="color: rgba(255, 255, 255, 0.8);">物理の問題</div>
+      </button>
+      <button class="course-btn p-8 rounded-2xl font-bold transition-all duration-300 hover:scale-105" data-course="earth" style="background: linear-gradient(135deg, #8e44ad 0%, #6c3483 100%); box-shadow: 0 0 30px rgba(142, 68, 173, 0.4);">
+        <div class="text-5xl mb-3">🌋</div>
+        <div class="font-jp text-2xl mb-2" style="color: white;">だいちコース</div>
+        <div class="font-jp text-sm" style="color: rgba(255, 255, 255, 0.8);">地学の問題</div>
+      </button>
+    </div>
+    <button id="back-to-start-btn" class="font-jp text-lg px-8 py-3 rounded-xl transition-all duration-300 hover:scale-105" style="background: rgba(255, 255, 255, 0.1); color: white; border: 2px solid rgba(255, 255, 255, 0.3);"> ← もどる </button>
+   </div>
+
+   <!-- ゲーム画面 -->
+   <div id="game-screen" class="hidden w-full max-w-6xl relative z-10 flex gap-6">
+    <!-- サイドゲージ -->
     <div class="hidden md:block w-32 flex-shrink-0">
      <div class="sticky top-6">
-      <div class="font-jp text-sm text-center mb-3" style="color: #00ffff;">
-       進行状況
+      <div class="font-jp text-sm text-center mb-3" style="color: #00ffff;">進行状況</div>
+      <div class="relative rounded-full p-2" style="background: rgba(0, 0, 0, 0.6); border: 2px solid rgba(0, 255, 255, 0.3); height: 500px;">
+       <div class="absolute bottom-2 left-2 right-2 rounded-full" style="background: rgba(255, 255, 255, 0.1); top: 2px;"></div>
+       <div id="progress-gauge" class="absolute bottom-2 left-2 right-2 rounded-full transition-all duration-500" style="background: linear-gradient(to top, #00ffff, #0099ff); height: 0%; box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);"></div>
+       <div id="planet-markers" class="absolute inset-0"></div>
+       <div id="ship-marker" class="absolute left-1/2 transform -translate-x-1/2 transition-all duration-500 text-3xl" style="bottom: 0%;">🚀</div>
       </div>
-      <div class="relative rounded-full p-2" style="background: rgba(0, 0, 0, 0.6); border: 2px solid rgba(0, 255, 255, 0.3); height: 500px;"><!-- ゲージ背景 -->
-       <div class="absolute bottom-2 left-2 right-2 rounded-full" style="background: rgba(255, 255, 255, 0.1); top: 2px;"></div><!-- ゲ���ジ本体 -->
-       <div id="progress-gauge" class="absolute bottom-2 left-2 right-2 rounded-full transition-all duration-500" style="background: linear-gradient(to top, #00ffff, #0099ff); height: 0%; box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);"></div><!-- 惑星マーカー -->
-       <div id="planet-markers" class="absolute inset-0"></div><!-- 宇宙船アイコン -->
-       <div id="ship-marker" class="absolute left-1/2 transform -translate-x-1/2 transition-all duration-500 text-3xl" style="bottom: 0%;">
-        🚀
-       </div>
-      </div>
-      <div id="gauge-planet-name" class="font-jp text-xs text-center mt-3" style="color: #ffd700;">
-       🌍 地球
-      </div>
-     </div>
-    </div><!-- メインゲ��ムエ��ア -->
-    <div class="flex-1"><!-- ��宙船 -->
-     <div class="text-center mb-6">
-      <div id="spaceship" class="spaceship inline-block">
-       🚀
-      </div>
-     </div><!-- ステータスバー -->
-     <div class="flex justify-between items-center mb-6 px-4 rounded-xl p-4" style="background: rgba(0, 0, 0, 0.5); border: 2px solid rgba(0, 255, 255, 0.3);">
-      <div class="text-center">
-       <div class="font-jp text-gray-400 text-sm mb-1">
-        スコア
-       </div>
-       <div id="score" class="font-game text-3xl font-bold" style="color: #00ffff;">
-        0
-       </div>
-      </div>
-      <div class="text-center">
-       <div class="font-jp text-gray-400 text-sm mb-1">
-        現在地
-       </div>
-       <div id="location" class="font-jp text-xl font-bold" style="color: #ffd700;">
-        🌍 地球
-       </div>
-      </div>
-      <div class="text-center">
-       <div class="font-jp text-gray-400 text-sm mb-1">
-        残り時間
-       </div>
-       <div id="timer" class="font-game text-3xl font-bold" style="color: #ff6b9d;">
-        60
-       </div>
-      </div>
-      <div class="text-center">
-       <div class="font-jp text-gray-400 text-sm mb-1">
-        正確率
-       </div>
-       <div id="accuracy" class="font-game text-3xl font-bold" style="color: #00ff88;">
-        100%
-       </div>
-      </div>
-     </div><!-- 看板（問題表示エリア） -->
-     <div id="sign-board" class="sign-board rounded-3xl p-8 mb-6 relative">
-      <div class="absolute top-4 left-1/2 transform -translate-x-1/2 font-jp text-sm" style="color: #ffd700;">
-       🎯 看板 🎯
-      </div>
-      <div id="word-hint" class="font-jp text-xl md:text-2xl mb-8 text-center leading-relaxed mt-4" style="color: #ffffff; min-height: 70px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);"><!-- 質問がここに表示される -->
-      </div>
-      <div class="font-jp text-sm mb-2 text-center" style="color: #ffd700;">
-       答え（ローマ字で入力）
-      </div>
-      <div id="current-word" class="font-jp text-3xl md:text-4xl tracking-wider text-center mb-4" style="color: white; min-height: 50px; text-shadow: 0 0 10px rgba(255,255,255,0.5);"><!-- ひらがながここに表示される -->
-      </div>
-      <div id="answer-hint" class="font-jp text-lg text-center" style="color: #00ffff; min-height: 30px; opacity: 0; text-shadow: 0 0 10px rgba(0,255,255,0.8);"><!-- ローマ字ヒントがここに表示される -->
-      </div>
-     </div><!-- 入力表示 -->
-     <div class="rounded-xl p-4 mb-4 text-center" style="background: rgba(0, 0, 0, 0.5); border: 2px solid rgba(0, 255, 255, 0.3);"><span id="input-display" class="font-game text-2xl tracking-wider" style="color: rgba(255, 255, 255, 0.6);">入力してください...</span>
-     </div><!-- 隠し入力フィールド --> <input type="text" id="hidden-input" class="opacity-0 absolute" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"> <!-- コンボ表示 -->
-     <div id="combo-display" class="text-center font-game text-2xl" style="color: #ff6b9d; text-shadow: 0 0 10px rgba(255, 107, 157, 0.8);"><span id="combo-count"></span>
+      <div id="gauge-planet-name" class="font-jp text-xs text-center mt-3" style="color: #ffd700;">🌍 地球</div>
      </div>
     </div>
-   </div><!-- 結果画面 -->
-   <div id="result-screen" class="hidden text-center max-w-2xl relative z-10"><!-- フライトアニメーション用キャンバス -->
+
+    <!-- メインゲームエリア -->
+    <div class="flex-1">
+     <div class="text-center mb-6"><div id="spaceship" class="spaceship inline-block">🚀</div></div>
+
+     <!-- ステータスバー -->
+     <div class="flex justify-between items-center mb-6 px-4 rounded-xl p-4" style="background: rgba(0, 0, 0, 0.5); border: 2px solid rgba(0, 255, 255, 0.3);">
+      <div class="text-center"><div class="font-jp text-gray-400 text-sm mb-1">スコア</div><div id="score" class="font-game text-3xl font-bold" style="color: #00ffff;">0</div></div>
+      <div class="text-center"><div class="font-jp text-gray-400 text-sm mb-1">現在地</div><div id="location" class="font-jp text-xl font-bold" style="color: #ffd700;">🌍 地球</div></div>
+      <div class="text-center"><div class="font-jp text-gray-400 text-sm mb-1">残り時間</div><div id="timer" class="font-game text-3xl font-bold" style="color: #ff6b9d;">60</div></div>
+      <div class="text-center"><div class="font-jp text-gray-400 text-sm mb-1">正確率</div><div id="accuracy" class="font-game text-3xl font-bold" style="color: #00ff88;">100%</div></div>
+     </div>
+
+     <!-- 看板（問題表示エリア） -->
+     <div id="sign-board" class="sign-board rounded-3xl p-8 mb-6 relative">
+      <div class="absolute top-4 left-1/2 transform -translate-x-1/2 font-jp text-sm" style="color: #ffd700;">🎯 看板 🎯</div>
+      <div id="word-hint" class="font-jp text-xl md:text-2xl mb-8 text-center leading-relaxed mt-4" style="color: #ffffff; min-height: 70px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);"></div>
+      <div class="font-jp text-sm mb-2 text-center" style="color: #ffd700;">答え（ローマ字で入力）</div>
+      <div id="current-word" class="font-jp text-3xl md:text-4xl tracking-wider text-center mb-4" style="color: white; min-height: 50px; text-shadow: 0 0 10px rgba(255,255,255,0.5);"></div>
+      <div id="answer-hint" class="font-jp text-lg text-center" style="color: #00ffff; min-height: 30px; opacity: 0; text-shadow: 0 0 10px rgba(0,255,255,0.8);"></div>
+     </div>
+
+     <!-- 入力表示 -->
+     <div class="rounded-xl p-4 mb-4 text-center" style="background: rgba(0, 0, 0, 0.5); border: 2px solid rgba(0, 255, 255, 0.3);">
+       <span id="input-display" class="font-game text-2xl tracking-wider" style="color: rgba(255, 255, 255, 0.6);">入力してください...</span>
+     </div>
+
+     <!-- 隠し入力フィールド -->
+     <input type="text" id="hidden-input" class="opacity-0 absolute" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+
+     <!-- コンボ表示 -->
+     <div id="combo-display" class="text-center font-game text-2xl" style="color: #ff6b9d; text-shadow: 0 0 10px rgba(255, 107, 157, 0.8);"><span id="combo-count"></span></div>
+    </div>
+   </div>
+
+   <!-- 結果画面 -->
+   <div id="result-screen" class="hidden text-center max-w-2xl relative z-10">
+    <!-- フライトアニメーション -->
     <div id="flight-animation" class="fixed inset-0 pointer-events-none z-50 hidden">
      <div class="relative w-full h-full">
       <div id="flight-gauge" class="absolute left-1/2 transform -translate-x-1/2 w-32" style="height: 80%; top: 10%;">
        <div class="relative h-full rounded-full p-2" style="background: rgba(0, 0, 0, 0.8); border: 3px solid rgba(0, 255, 255, 0.5);">
-        <div id="flight-rocket" class="absolute text-5xl" style="bottom: 0%; left: 50%; transform: translateX(-50%);">
-         🚀
-        </div>
+        <div id="flight-rocket" class="absolute text-5xl" style="bottom: 0%; left: 50%; transform: translateX(-50%);">🚀</div>
         <div id="flight-planets"></div>
        </div>
       </div>
      </div>
     </div>
+
     <div class="mb-8 animate-fadeIn">
-     <div id="final-planet-emoji" class="text-8xl mb-6">
-      🌍
-     </div>
+     <div id="final-planet-emoji" class="text-8xl mb-6">🌍</div>
      <h2 class="font-game text-4xl font-bold mb-4" style="color: #00ffff; text-shadow: 0 0 30px rgba(0, 255, 255, 0.8);">ミッション完了！</h2>
-     <div id="final-location" class="font-jp text-2xl mb-6" style="color: #ffd700;">
-      到達地点：🌍 地球
-     </div>
-     <div id="new-record-message" class="hidden font-jp text-2xl mb-6 animate-fadeIn" style="color: #ff6b9d; text-shadow: 0 0 20px rgba(255, 107, 157, 0.8);">
-      🎉 トップ10入り！ニックネームを登録しよう！ 🎉
-     </div>
+     <div id="final-location" class="font-jp text-2xl mb-6" style="color: #ffd700;">到達地点：🌍 地球</div>
+     <div id="new-record-message" class="hidden font-jp text-2xl mb-6 animate-fadeIn" style="color: #ff6b9d; text-shadow: 0 0 20px rgba(255, 107, 157, 0.8);">🎉 トップ10入り！ニックネームを登録しよう！ 🎉</div>
     </div>
+
     <div class="rounded-2xl p-8 mb-8" style="background: rgba(0, 0, 0, 0.6); border: 2px solid rgba(0, 255, 255, 0.4);">
      <div class="grid grid-cols-2 gap-6">
-      <div class="text-center">
-       <div class="font-jp text-gray-400 mb-2">
-        最終スコア
-       </div>
-       <div id="final-score" class="font-game text-5xl font-bold" style="color: #00ffff; text-shadow: 0 0 20px rgba(0, 255, 255, 0.6);">
-        0
-       </div>
-      </div>
-      <div class="text-center">
-       <div class="font-jp text-gray-400 mb-2">
-        タイプ数
-       </div>
-       <div id="final-typed" class="font-game text-5xl font-bold" style="color: #00ff88;">
-        0
-       </div>
-      </div>
-      <div class="text-center">
-       <div class="font-jp text-gray-400 mb-2">
-        正確率
-       </div>
-       <div id="final-accuracy" class="font-game text-5xl font-bold" style="color: #ffd700;">
-        100%
-       </div>
-      </div>
-      <div class="text-center">
-       <div class="font-jp text-gray-400 mb-2">
-        最高コンボ
-       </div>
-       <div id="final-combo" class="font-game text-5xl font-bold" style="color: #ff6b9d;">
-        0
-       </div>
-      </div>
+      <div class="text-center"><div class="font-jp text-gray-400 mb-2">最終スコア</div><div id="final-score" class="font-game text-5xl font-bold" style="color: #00ffff; text-shadow: 0 0 20px rgba(0, 255, 255, 0.6);">0</div></div>
+      <div class="text-center"><div class="font-jp text-gray-400 mb-2">タイプ数</div><div id="final-typed" class="font-game text-5xl font-bold" style="color: #00ff88;">0</div></div>
+      <div class="text-center"><div class="font-jp text-gray-400 mb-2">正確率</div><div id="final-accuracy" class="font-game text-5xl font-bold" style="color: #ffd700;">100%</div></div>
+      <div class="text-center"><div class="font-jp text-gray-400 mb-2">最高コンボ</div><div id="final-combo" class="font-game text-5xl font-bold" style="color: #ff6b9d;">0</div></div>
      </div>
-    </div><!-- ニックネーム入力フォーム -->
-    <div id="nickname-form" class="hidden mb-8 rounded-xl p-6" style="background: rgba(0, 0, 0, 0.6); border: 2px solid rgba(255, 215, 0, 0.6);"><label for="nickname-input" class="font-jp text-lg mb-3 block" style="color: #ffd700;">ニックネームを入力してください（6文字まで）</label>
-     <div class="flex gap-3 justify-center"><input type="text" id="nickname-input" maxlength="6" class="font-jp px-4 py-3 rounded-lg text-xl text-center" style="background: rgba(255, 255, 255, 0.9); color: #000; border: 2px solid #ffd700; width: 200px;" placeholder="ニックネーム"> <button id="submit-nickname-btn" class="font-jp px-6 py-3 rounded-lg font-bold transition-all duration-300 hover:scale-105" style="background: linear-gradient(135deg, #ffd700 0%, #ffa500 100%); color: #000;"> 登録 </button>
-     </div>
-    </div><!-- 過去のベストスコア -->
+    </div>
+
+    <!-- ニックネーム入力フォーム -->
+    <div id="nickname-form" class="hidden mb-8 rounded-xl p-6" style="background: rgba(0, 0, 0, 0.6); border: 2px solid rgba(255, 215, 0, 0.6);">
+      <label for="nickname-input" class="font-jp text-lg mb-3 block" style="color: #ffd700;">ニックネームを入力してください（6文字まで）</label>
+      <div class="flex gap-3 justify-center">
+        <input type="text" id="nickname-input" maxlength="6" class="font-jp px-4 py-3 rounded-lg text-xl text-center" style="background: rgba(255, 255, 255, 0.9); color: #000; border: 2px solid #ffd700; width: 200px;" placeholder="ニックネーム">
+        <button id="submit-nickname-btn" class="font-jp px-6 py-3 rounded-lg font-bold transition-all duration-300 hover:scale-105" style="background: linear-gradient(135deg, #ffd700 0%, #ffa500 100%); color: #000;"> 登録 </button>
+      </div>
+    </div>
+
+    <!-- 過去のベストスコア -->
     <div id="best-scores" class="mt-8 rounded-xl p-6 max-w-md mx-auto mb-8" style="background: rgba(0, 0, 0, 0.6); border: 2px solid rgba(0, 255, 255, 0.4);">
-     <div class="font-jp text-lg mb-4 text-center" style="color: #ffd700;">
-      🏆 トップ10ランキング 🏆
-     </div>
-     <div id="best-scores-list" class="font-jp text-sm space-y-2"><!-- スコアがここに表示される -->
-     </div>
-    </div><button id="retry-btn" class="font-game text-2xl px-16 py-5 rounded-2xl font-bold transition-all duration-300 hover:scale-110" style="background: linear-gradient(135deg, #00ffff 0%, #0099ff 100%); color: #000428; box-shadow: 0 0 30px rgba(0, 255, 255, 0.6);"> 🚀 再挑戦 </button>
+     <div class="font-jp text-lg mb-4 text-center" style="color: #ffd700;">🏆 トップ10ランキング 🏆</div>
+     <div id="best-scores-list" class="font-jp text-sm space-y-2"></div>
+    </div>
+
+    <button id="retry-btn" class="font-game text-2xl px-16 py-5 rounded-2xl font-bold transition-all duration-300 hover:scale-110" style="background: linear-gradient(135deg, #00ffff 0%, #0099ff 100%); color: #000428; box-shadow: 0 0 30px rgba(0, 255, 255, 0.6);"> 🚀 再挑戦 </button>
    </div>
   </div>
+
   <script>
     const defaultConfig = {
-      game_title: '宇宙タイピングクエスト',
+      game_title: '中１宇宙タイピングクエスト',
       start_button_text: '🚀 出発',
       background_start: '#000428',
       background_end: '#004e92',
@@ -405,7 +320,31 @@
 
     let config = { ...defaultConfig };
 
+    // ===== SFX helper =====
+    function playSfx(id, volume = 0.6) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      try {
+        el.pause();
+        el.currentTime = 0;
+        el.volume = volume;
+        el.play().catch(() => {});
+      } catch (_) {}
+    }
+
+    function stopAudio(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      try {
+        el.pause();
+        el.currentTime = 0;
+      } catch (_) {}
+    }
+
     // ひらがな→ローマ字変換テーブル（複数入力方式対応）
+    // 長音符「ー」はハイフン '-' 入力を許可
+    // 方針：ヘボン式/訓令式（学校ローマ字）を広く許容。
+    // 特に「ん」は n / nn / n' をすべて許容（前後の文字に依存しない）。
     const hiraganaToRomaji = {
       'あ': ['a'], 'い': ['i'], 'う': ['u'], 'え': ['e'], 'お': ['o'],
       'か': ['ka', 'ca'], 'き': ['ki'], 'く': ['ku', 'cu'], 'け': ['ke'], 'こ': ['ko', 'co'],
@@ -416,10 +355,11 @@
       'ま': ['ma'], 'み': ['mi'], 'む': ['mu'], 'め': ['me'], 'も': ['mo'],
       'や': ['ya'], 'ゆ': ['yu'], 'よ': ['yo'],
       'ら': ['ra'], 'り': ['ri'], 'る': ['ru'], 'れ': ['re'], 'ろ': ['ro'],
-      'わ': ['wa'], 'を': ['wo'], 'ん': ['nn', 'n'],
+      'わ': ['wa'], 'を': ['wo', 'o'], 'ん': ['n', 'nn', "n'"] ,
+      'ー': ['-'] ,
       'が': ['ga'], 'ぎ': ['gi'], 'ぐ': ['gu'], 'げ': ['ge'], 'ご': ['go'],
       'ざ': ['za'], 'じ': ['ji', 'zi'], 'ず': ['zu'], 'ぜ': ['ze'], 'ぞ': ['zo'],
-      'だ': ['da'], 'ぢ': ['di', 'ji'], 'づ': ['du', 'zu'], 'で': ['de'], 'ど': ['do'],
+      'だ': ['da'], 'ぢ': ['di', 'ji', 'dji'], 'づ': ['du', 'zu', 'dzu'], 'で': ['de'], 'ど': ['do'],
       'ば': ['ba'], 'び': ['bi'], 'ぶ': ['bu'], 'べ': ['be'], 'ぼ': ['bo'],
       'ぱ': ['pa'], 'ぴ': ['pi'], 'ぷ': ['pu'], 'ぺ': ['pe'], 'ぽ': ['po'],
       'きゃ': ['kya'], 'きゅ': ['kyu'], 'きょ': ['kyo'],
@@ -454,8 +394,8 @@
     // 単語リスト（コース別）
     const wordsByCourse = {
       creature: [
-        { hint: 'めしべの先端にある、花��が��く部分。', answer: 'ちゅうとう' },
-        { hint: 'おし��の先端にある、花粉が入っている袋。', answer: 'やく' },
+        { hint: 'めしべの先端にある、花粉がつく部分。', answer: 'ちゅうとう' },
+        { hint: 'おしべの先端にある、花粉が入っている袋。', answer: 'やく' },
         { hint: '受粉後、成長して果実になる部分。', answer: 'しぼう' },
         { hint: '受粉後、成長して種子になる部分。', answer: 'はいしゅ' },
         { hint: 'めしべの先に花粉がつくこと。', answer: 'じゅふん' },
@@ -480,7 +420,7 @@
         { hint: '体温をほぼ一定に保つ動物。', answer: 'こうおんどうぶつ' },
         { hint: '節足動物の体の表面をおおう、かたい構造。', answer: 'がいこっかく' },
         { hint: '内臓が「外とう膜」に包まれている動物。', answer: 'なんたいどうぶつ' },
-        { hint: 'あしが6本ある節足動物のグルー��。', answer: 'こんちゅうるい' },
+        { hint: 'あしが6本ある節足動物のグループ。', answer: 'こんちゅうるい' },
         { hint: 'エビやカニなどの節足動物のグループ。', answer: 'こうかくるい' },
         { hint: '魚類などが水中で呼吸をするところ。', answer: 'えら' },
         { hint: '哺乳類などが陸上で呼吸をするところ。', answer: 'はい' },
@@ -580,86 +520,69 @@
       ]
     };
 
-    // ひらがなを1文字ずつローマ字の選択肢に分解
     function convertHiraganaToRomajiArray(hiragana) {
       const result = [];
       let i = 0;
-      
+
       while (i < hiragana.length) {
-        let matched = false;
-        
-        // 促音「っ」の処理
         if (hiragana[i] === 'っ' && i < hiragana.length - 1) {
           const nextChar = hiragana[i + 1];
-          // 次の文字の子音を重ねる
-          let consonants = [];
-          
-          // 2文字の組み合わせをチェック
+          const consonants = new Set();
+
+          // 2文字かな（ちゃ/ちゅ等）対応
           if (i + 2 < hiragana.length) {
             const twoChar = hiragana.substring(i + 1, i + 3);
             if (hiraganaToRomaji[twoChar]) {
-              const firstRomaji = hiraganaToRomaji[twoChar][0];
-              consonants.push(firstRomaji[0]);
+              hiraganaToRomaji[twoChar].forEach(r => {
+                if (r && r.length) consonants.add(r[0]);
+              });
             }
           }
-          
-          // 1文字の子音を取得
+
+          // 1文字かな対応
           if (hiraganaToRomaji[nextChar]) {
-            const firstRomaji = hiraganaToRomaji[nextChar][0];
-            consonants.push(firstRomaji[0]);
-          }
-          
-          if (consonants.length > 0) {
-            result.push({
-              hiragana: 'っ',
-              romaji: [consonants[0], 'ltu', 'xtu'],
-              length: 1
+            hiraganaToRomaji[nextChar].forEach(r => {
+              if (r && r.length) consonants.add(r[0]);
             });
+          }
+
+          // 例：「ち」→ chi/ti → c/t の両対応
+          if (nextChar === 'ち') {
+            consonants.add('t');
+            consonants.add('c');
+          }
+
+          if (consonants.size > 0) {
+            result.push({ hiragana: 'っ', romaji: [...consonants, 'ltu', 'xtu', 'ltsu'], length: 1 });
             i += 1;
-            matched = true;
             continue;
           }
         }
-        
-        // 2文字の組み合わせを優先チェック（拗音など）
+
         if (i < hiragana.length - 1) {
           const twoChar = hiragana.substring(i, i + 2);
           if (hiraganaToRomaji[twoChar]) {
-            result.push({
-              hiragana: twoChar,
-              romaji: hiraganaToRomaji[twoChar],
-              length: 2
-            });
+            result.push({ hiragana: twoChar, romaji: hiraganaToRomaji[twoChar], length: 2 });
             i += 2;
-            matched = true;
             continue;
           }
         }
-        
-        // 1文字チェック
+
         const oneChar = hiragana[i];
         if (hiraganaToRomaji[oneChar]) {
-          result.push({
-            hiragana: oneChar,
-            romaji: hiraganaToRomaji[oneChar],
-            length: 1
-          });
+          result.push({ hiragana: oneChar, romaji: hiraganaToRomaji[oneChar], length: 1 });
           i += 1;
-          matched = true;
         } else {
           i += 1;
         }
       }
-      
+
       return result;
     }
 
-    // スコアから到達惑星を取得
     function getPlanetByScore(score) {
       for (let i = planets.length - 1; i >= 0; i--) {
-        if (score >= planets[i].distance) {
-          return planets[i];
-        }
+        if (score >= planets[i].distance) return planets[i];
       }
       return planets[0];
     }
@@ -685,54 +608,194 @@
     };
 
     // スコア履歴（コース別）
-    let scoreHistory = {};
+    let scoreHistory = { creature: [], matter: [], physics: [], earth: [] };
     let isTop10 = false;
     let pendingScore = null;
 
-    // Data SDK Handler
-    const dataHandler = {
-      onDataChanged(data) {
-        // コース別に分類
-        scoreHistory = {
-          creature: [],
-          matter: [],
-          physics: [],
-          earth: []
-        };
-        
-        data.forEach(record => {
-          const course = record.course || 'creature';
-          if (scoreHistory[course]) {
-            scoreHistory[course].push(record);
-          }
-        });
-        
-        // 各コースをスコア順にソート
-        Object.keys(scoreHistory).forEach(course => {
-          scoreHistory[course].sort((a, b) => b.score - a.score);
-        });
-        
-        updateBestScoresDisplay();
-      }
+    // ===== Firebase / Firestore =====
+    // ※「論理リセット」用：この数値を変更すると、過去のランキングを無視して新しいランキングとして扱います。
+    const RANKING_SCHEMA_VERSION = 1;
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAs-mANaQsq-yY7UL3yQTDIVjgmLAsescQ",
+      authDomain: "space-typing1.firebaseapp.com",
+      projectId: "space-typing1",
+      storageBucket: "space-typing1.firebasestorage.app",
+      messagingSenderId: "497196660186",
+      appId: "1:497196660186:web:28d8184a103fcea1947ce3",
+      measurementId: "G-LS7Q2YLS9N"
     };
 
-    // Data SDK初期化
-    async function initDataSdk() {
-      if (window.dataSdk) {
-        const result = await window.dataSdk.init(dataHandler);
-        if (!result.isOk) {
-          console.error('Data SDK initialization failed');
+    let db = null;
+    let firebaseReady = false;
+
+    async function initFirebaseAndAuth() {
+      try {
+        if (!window.firebase || !firebase.initializeApp) throw new Error('Firebase SDK not loaded');
+        if (!firebase.apps || firebase.apps.length === 0) firebase.initializeApp(firebaseConfig);
+        if (!firebase.firestore) throw new Error('Firebase firestore not available');
+
+        // ★要件：書き込みは匿名ログイン必須（読み取りは誰でもOKだが、ここで先に匿名ログインしておく）
+        if (!firebase.auth) throw new Error('Firebase auth not available');
+        const auth = firebase.auth();
+        if (!auth.currentUser) {
+          await auth.signInAnonymously();
         }
+
+        db = firebase.firestore();
+        firebaseReady = true;
+        return true;
+      } catch (err) {
+        console.error('Firebase init failed:', err);
+        db = null;
+        firebaseReady = false;
+        return false;
       }
     }
 
-    // ベストスコア表示を更新
+    // ✅ Firestoreコレクション名
+    // 重要：あなたのFirestoreルールは /typing_scores/{document} にのみ許可があります。
+    // そのため、コード側も必ず typing_scores を使います。
+    function getRankingCollectionName() {
+      return 'typing_scores';
+    }
+
+
+    // Firestoreからコース別トップ10を取得
+    // 🔧 修正ポイント：orderBy を 2つ使うと「複合インデックスが必要」になり、環境によっては読み取り失敗します。
+    // → orderBy(score) の1つだけにして、同点の並び順（timestamp）だけクライアントで整列します。
+    async function loadTopScores(course) {
+      let waitCount = 0;
+      while (!firebaseReady && waitCount < 50) {
+        await new Promise(r => setTimeout(r, 100));
+        waitCount++;
+      }
+      if (!course) return;
+
+      if (!db) {
+        const err = new Error('Firestore is not initialized (db is null). Check auth/rules/network.');
+        console.error('Failed to load scores:', err);
+        scoreHistory[course] = [];
+        updateBestScoresDisplayWithError(course, err);
+        return;
+      }
+
+      const colName = getRankingCollectionName();
+
+      // まずは「コース + schema_version + score」で絞り込む（最小読み取り）
+      // ただし環境によっては複合インデックス未作成で失敗することがあるため、
+      // 失敗したらフォールバック（score順だけで多めに取り、クライアントで絞り込み）を行う。
+      try {
+        const snap = await db
+          .collection(colName)
+          .where('schema_version', '==', RANKING_SCHEMA_VERSION)
+          .where('course', '==', course)
+          .orderBy('score', 'desc')
+          .limit(50)
+          .get();
+
+        const list = [];
+        snap.forEach(doc => {
+          const d = doc.data() || {};
+          list.push({
+            score: Number(d.score || 0),
+            planet_name: d.planet_name || '地球',
+            planet_emoji: d.planet_emoji || '🌍',
+            course,
+            nickname: d.nickname || '名無し',
+            timestamp: (d.timestamp || '')
+          });
+        });
+
+        // score desc, timestamp desc（同点は新しい方を上）
+        list.sort((a, b) => {
+          const ds = (b.score - a.score);
+          if (ds !== 0) return ds;
+          const ta = String(a.timestamp || '');
+          const tb = String(b.timestamp || '');
+          if (tb > ta) return 1;
+          if (tb < ta) return -1;
+          return 0;
+        });
+
+        scoreHistory[course] = list.slice(0, 10);
+        updateBestScoresDisplay();
+        return;
+      } catch (err) {
+        // よくある原因：複合インデックス未作成（FAILED_PRECONDITION）
+        // ただし、環境によっては permission-denied っぽく見えることもあるためフォールバック
+        console.warn('Primary ranking query failed, trying fallback query:', err);
+      }
+
+      // フォールバック：score のみで上位を多めに読み、クライアントで course と schema_version を絞る
+      // ※ 読み取りは誰でもOKなルールの場合に動きます。
+      try {
+        const snap2 = await db
+          .collection(colName)
+          .orderBy('score', 'desc')
+          .limit(500)
+          .get();
+
+        const list2 = [];
+        snap2.forEach(doc => {
+          const d = doc.data() || {};
+          if (Number(d.schema_version) !== Number(RANKING_SCHEMA_VERSION)) return;
+          if (String(d.course || '') !== String(course)) return;
+          list2.push({
+            score: Number(d.score || 0),
+            planet_name: d.planet_name || '地球',
+            planet_emoji: d.planet_emoji || '🌍',
+            course,
+            nickname: d.nickname || '名無し',
+            timestamp: (d.timestamp || '')
+          });
+        });
+
+        list2.sort((a, b) => {
+          const ds = (b.score - a.score);
+          if (ds !== 0) return ds;
+          const ta = String(a.timestamp || '');
+          const tb = String(b.timestamp || '');
+          if (tb > ta) return 1;
+          if (tb < ta) return -1;
+          return 0;
+        });
+
+        scoreHistory[course] = list2.slice(0, 10);
+        updateBestScoresDisplay();
+      } catch (err2) {
+        console.error('Failed to load scores (fallback also failed):', err2);
+        scoreHistory[course] = [];
+        updateBestScoresDisplayWithError(course, err2);
+      }
+    }
+
+    function updateBestScoresDisplayWithError(course, err) {
+      const bestScoresListEl = document.getElementById('best-scores-list');
+      if (!bestScoresListEl) return;
+
+      const code = (err && err.code) ? String(err.code) : '';
+      const msg = (err && err.message) ? String(err.message) : 'unknown error';
+      bestScoresListEl.innerHTML = `
+        <div class="text-center text-gray-400">
+          ランキングを読み込めませんでした<br>
+          <span class="text-xs" style="color: rgba(255,255,255,0.6);">${code ? code + ': ' : ''}${msg}</span>
+        </div>
+      `;
+    }
+
+    async function loadAllTopScores() {
+      const courses = ['creature', 'matter', 'physics', 'earth'];
+      for (const c of courses) {
+        await loadTopScores(c);
+      }
+    }
+
     function updateBestScoresDisplay() {
       const bestScoresListEl = document.getElementById('best-scores-list');
       if (!bestScoresListEl || !gameState.selectedCourse) return;
 
       const courseScores = scoreHistory[gameState.selectedCourse] || [];
-      
       if (courseScores.length === 0) {
         bestScoresListEl.innerHTML = '<div class="text-center text-gray-500">まだ記録がありません</div>';
         return;
@@ -756,9 +819,21 @@
       }).join('');
     }
 
-    // スコアを保存
+    async function ensureWriteAuth() {
+      if (!window.firebase || !firebase.auth) return false;
+      try {
+        const auth = firebase.auth();
+        if (auth.currentUser) return true;
+        await auth.signInAnonymously();
+        return true;
+      } catch (e) {
+        console.warn('ensureWriteAuth failed:', e);
+        return false;
+      }
+    }
+
     async function saveScore(score, planetName, planetEmoji, nickname) {
-      if (!window.dataSdk || !gameState.selectedCourse) return;
+      if (!gameState.selectedCourse) return;
 
       const submitBtn = document.getElementById('submit-nickname-btn');
       if (submitBtn) {
@@ -766,40 +841,61 @@
         submitBtn.textContent = '登録中...';
       }
 
-      const createResult = await window.dataSdk.create({
-        score: score,
-        planet_name: planetName,
-        planet_emoji: planetEmoji,
-        course: gameState.selectedCourse,
-        nickname: nickname || '名無し',
-        timestamp: new Date().toISOString()
-      });
+      try {
+        if (!db) throw new Error('Firestore is not initialized (db is null). Cannot save.');
 
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.textContent = '登録';
-      }
+        const authed = await ensureWriteAuth();
+        if (!authed) throw new Error('匿名ログインに失敗したため、ランキング保存ができませんでした。');
 
-      if (!createResult.isOk) {
-        console.error('Failed to save score');
-      } else {
-        // ニックネームフォームを非表示
+        const course = gameState.selectedCourse;
+        const colName = getRankingCollectionName(course);
+
+        // ニックネーム：改行・タブ・スペースを除去して6文字まで
+        const safeNickname = (nickname && nickname.length ? nickname : '名無し')
+          .replace(/[ \r\n\t]+/g, '')
+          .slice(0, 6);
+
+        await db.collection(colName).add({
+          schema_version: RANKING_SCHEMA_VERSION,
+          course,
+          score: Number(score || 0),
+          planet_name: planetName,
+          planet_emoji: planetEmoji,
+          nickname: safeNickname,
+          timestamp: new Date().toISOString()
+        });
+
+        await loadTopScores(course);
+
         const nicknameForm = document.getElementById('nickname-form');
-        if (nicknameForm) {
-          nicknameForm.classList.add('hidden');
+        if (nicknameForm) nicknameForm.classList.add('hidden');
+      } catch (err) {
+        console.error('Failed to save score:', err);
+        const bestScoresListEl = document.getElementById('best-scores-list');
+        if (bestScoresListEl) {
+          const msg = (err && err.message) ? String(err.message) : '保存に失敗しました';
+          bestScoresListEl.innerHTML = `
+            <div class="text-center text-gray-400">
+              ランキング保存に失敗しました<br>
+              <span class="text-xs" style="color: rgba(255,255,255,0.6);">${msg}</span>
+            </div>
+          `;
+        }
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = '登録';
         }
       }
     }
 
-    // トップ10に入るかチェック
+    // トップ10に入るかチェック（同点は入れない）
     function checkTop10(score) {
       if (!gameState.selectedCourse) return false;
       const courseScores = scoreHistory[gameState.selectedCourse] || [];
-      
       if (courseScores.length < 10) return true;
-      
       const top10th = courseScores[9];
-      return score > top10th.score;
+      return Number(score) > Number(top10th.score);
     }
 
     // DOM要素
@@ -831,63 +927,61 @@
     const submitNicknameBtn = document.getElementById('submit-nickname-btn');
     const nicknameForm = document.getElementById('nickname-form');
 
-    // サイドゲージの初期化
     function initializeGauge() {
       if (!planetMarkersEl) return;
-      
       planetMarkersEl.innerHTML = '';
       const maxDistance = planets[planets.length - 1].distance;
-      
+
       planets.forEach(planet => {
         const position = (planet.distance / maxDistance) * 100;
         const marker = document.createElement('div');
         marker.className = 'absolute left-1/2 transform -translate-x-1/2 flex items-center';
         marker.style.bottom = `${position}%`;
-        marker.innerHTML = `
-          <div class="text-xl" style="text-shadow: 0 0 10px ${planet.color};">${planet.emoji}</div>
-        `;
+        marker.innerHTML = `<div class="text-xl" style="text-shadow: 0 0 10px ${planet.color};">${planet.emoji}</div>`;
         planetMarkersEl.appendChild(marker);
       });
     }
 
-    // ゲージ更新
     function updateGauge() {
       if (!progressGaugeEl || !shipMarkerEl || !gaugePlanetNameEl) return;
-      
       const maxDistance = planets[planets.length - 1].distance;
       const progress = Math.min((gameState.score / maxDistance) * 100, 100);
-      
       progressGaugeEl.style.height = `${progress}%`;
       shipMarkerEl.style.bottom = `${progress}%`;
-      
       const currentPlanet = getPlanetByScore(gameState.score);
       gaugePlanetNameEl.textContent = `${currentPlanet.emoji} ${currentPlanet.name}`;
       gaugePlanetNameEl.style.color = currentPlanet.color;
     }
 
-    // スタートボタン - コース選択画面へ
     startBtn.addEventListener('click', () => {
       startScreen.classList.add('hidden');
       courseScreen.classList.remove('hidden');
     });
 
-    // コース選択
     document.querySelectorAll('.course-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         gameState.selectedCourse = btn.getAttribute('data-course');
         courseScreen.classList.add('hidden');
+        await loadTopScores(gameState.selectedCourse);
         startGame();
       });
     });
 
-    // もどるボタン
     backToStartBtn.addEventListener('click', () => {
       courseScreen.classList.add('hidden');
       startScreen.classList.remove('hidden');
     });
 
-    // ゲーム開始
     function startGame() {
+      // 念のため効果音停止
+      stopAudio('sfx-explosion');
+      stopAudio('sfx-fanfare');
+      // ▶ BGM再生
+      const bgm = document.getElementById('bgm');
+      if (bgm) {
+        bgm.volume = 0.4;
+        bgm.play().catch(()=>{});
+      }
       gameState = {
         isPlaying: true,
         currentWord: null,
@@ -925,54 +1019,40 @@
       gameState.timer = setInterval(() => {
         gameState.timeLeft--;
         updateTimer();
-        if (gameState.timeLeft <= 0) {
-          endGame();
-        }
+        if (gameState.timeLeft <= 0) endGame();
       }, 1000);
     }
 
-    // 次の単語
     function nextWord() {
-      if (gameState.hintTimer) {
-        clearTimeout(gameState.hintTimer);
-      }
-      
+      if (gameState.hintTimer) clearTimeout(gameState.hintTimer);
       const words = wordsByCourse[gameState.selectedCourse] || wordsByCourse.creature;
-      
-      // 全問題を使い切った場合��リセット
-      if (gameState.usedWords.length >= words.length) {
-        gameState.usedWords = [];
-      }
-      
-      // 未使用の問題から選択
-      let availableWords = words.filter((word, index) => !gameState.usedWords.includes(index));
+      if (gameState.usedWords.length >= words.length) gameState.usedWords = [];
+
+      const availableWords = words.filter((_, index) => !gameState.usedWords.includes(index));
       const randomIndex = Math.floor(Math.random() * availableWords.length);
       const selectedWord = availableWords[randomIndex];
       const originalIndex = words.indexOf(selectedWord);
-      
+
       gameState.usedWords.push(originalIndex);
       gameState.currentWord = selectedWord;
       gameState.romajiArray = convertHiraganaToRomajiArray(selectedWord.answer);
       gameState.currentCharIndex = 0;
       gameState.currentRomajiInput = '';
       gameState.hintShown = false;
-      
+
       renderWord();
       wordHintEl.textContent = gameState.currentWord.hint;
       inputDisplayEl.textContent = '入力してください...';
       inputDisplayEl.style.color = 'rgba(255, 255, 255, 0.6)';
-      
+
       answerHintEl.style.opacity = '0';
       answerHintEl.textContent = '';
-      
+
       gameState.hintTimer = setTimeout(() => {
-        if (gameState.isPlaying && gameState.currentWord === selectedWord) {
-          showHint();
-        }
+        if (gameState.isPlaying && gameState.currentWord === selectedWord) showHint();
       }, 5000);
     }
 
-    // ヒント表示
     function showHint() {
       gameState.hintShown = true;
       const romajiHint = gameState.romajiArray.map(r => r.romaji[0]).join('');
@@ -981,65 +1061,105 @@
       answerHintEl.classList.add('animate-fadeIn');
     }
 
-    // 単語の描画
     function renderWord() {
-      const answer = gameState.currentWord.answer;
       let html = '';
-      let hiraganaIndex = 0;
-      
       for (let i = 0; i < gameState.romajiArray.length; i++) {
         const charInfo = gameState.romajiArray[i];
-        let charClass = 'char-pending';
         let style = 'color: rgba(255, 255, 255, 0.4);';
         let displayChar = charInfo.hiragana;
-        
+
         if (i < gameState.currentCharIndex) {
-          // 正解済みの文字
-          charClass = 'char-correct';
           style = 'color: #00ff88; text-shadow: 0 0 10px rgba(0, 255, 136, 0.8);';
         } else if (i === gameState.currentCharIndex) {
-          // 入力中の文字
-          if (gameState.hintShown || gameState.currentCharIndex > 0) {
-            // ヒント表示後 or 1文字目を正���した後は表示
-            charClass = 'char-current';
-            style = 'color: #ffd700; text-shadow: 0 0 20px rgba(255, 215, 0, 1), 0 0 40px rgba(255, 215, 0, 0.6); border-bottom: 4px solid #ffd700; display: inline-block; padding-bottom: 2px; transform: scale(1.2);';
-          } else {
-            // 最初は伏せる
+          if (!gameState.hintShown && gameState.currentCharIndex === 0) {
             displayChar = '●'.repeat(charInfo.hiragana.length);
-            charClass = 'char-current';
-            style = 'color: #ffd700; text-shadow: 0 0 20px rgba(255, 215, 0, 1), 0 0 40px rgba(255, 215, 0, 0.6); border-bottom: 4px solid #ffd700; display: inline-block; padding-bottom: 2px; transform: scale(1.2);';
           }
+          style = 'color: #ffd700; text-shadow: 0 0 20px rgba(255, 215, 0, 1), 0 0 40px rgba(255, 215, 0, 0.6); border-bottom: 4px solid #ffd700; display: inline-block; padding-bottom: 2px; transform: scale(1.2);';
         } else {
-          // 未入力の文字
-          if (gameState.hintShown || gameState.currentCharIndex > 0) {
-            // ヒント表示後 or 1文字目を正解した後は表示
-            charClass = 'char-pending';
-            style = 'color: rgba(255, 255, 255, 0.4);';
-          } else {
-            // 最初は伏せる
+          if (!gameState.hintShown && gameState.currentCharIndex === 0) {
             displayChar = '●'.repeat(charInfo.hiragana.length);
           }
         }
-        
-        html += `<span class="${charClass}" style="${style}">${displayChar}</span>`;
-        hiraganaIndex += charInfo.length;
+        html += `<span style="${style}">${displayChar}</span>`;
       }
-      
       currentWordEl.innerHTML = html;
     }
 
-    // キー入力処理
+    function isVowelChar(ch) {
+      return ch === 'a' || ch === 'i' || ch === 'u' || ch === 'e' || ch === 'o';
+    }
+
+    // 「ん」確定判定用：次の文字が子音（ただし y/n 以外）なら、直前の 'n' を「ん」として確定して次へ進める
+    function isConsonantForNCommit(ch) {
+      return /^[a-z]$/.test(ch) && !isVowelChar(ch) && ch !== 'y' && ch !== 'n';
+    }
+
+    // 1かな（romajiArrayの1要素）を確定したときの共通処理（スコア/コンボ/進行/演出）
+    function handleKanaCompleted() {
+      gameState.combo++;
+      gameState.score += 10 + Math.floor(gameState.combo / 5) * 5;
+      if (gameState.combo > gameState.maxCombo) gameState.maxCombo = gameState.combo;
+
+      // 宇宙船を前進
+      spaceshipEl.classList.add('animate-ship-move');
+      setTimeout(() => spaceshipEl.classList.remove('animate-ship-move'), 500);
+
+      gameState.currentCharIndex++;
+      gameState.currentRomajiInput = '';
+
+      // 1文字目を正解したらヒントを自動表示
+      if (gameState.currentCharIndex === 1 && !gameState.hintShown) {
+        if (gameState.hintTimer) clearTimeout(gameState.hintTimer);
+        showHint();
+      }
+
+      if (gameState.currentCharIndex >= gameState.romajiArray.length) {
+        // 単語完成
+        gameState.score += 50;
+        // 💥 単語を打ち切った瞬間に爆発音
+        playSfx('sfx-explosion', 0.55);
+        signBoardEl.classList.add('animate-explosion');
+        setTimeout(() => {
+          signBoardEl.classList.remove('animate-explosion');
+          nextWord();
+        }, 500);
+      } else {
+        renderWord();
+      }
+
+      inputDisplayEl.textContent = '✓';
+      inputDisplayEl.style.color = config.primary_color || defaultConfig.primary_color;
+    }
+
     function handleInput(e) {
       if (!gameState.isPlaying || !gameState.currentWord) return;
 
       const key = e.key;
-      if (key.length !== 1 || !/[a-z]/i.test(key)) return;
+      // 英字 + アポストロフィ（n' 対応）だけ受け付ける
+      if (key.length !== 1) return;
+      const isLetter = /[a-z]/i.test(key);
+      const isApos = key === "'";
+      const isHyphen = key === '-';
+      if (!isLetter && !isApos && !isHyphen) return;
 
       gameState.totalTyped++;
       const typedLower = key.toLowerCase();
+
+      // ★「ん」特殊処理：すでに 'n' を打っていて、次に子音（y/n以外）が来たら
+      // その子音は次のかなの入力として扱う（＝このタイミングで「ん」を確定する）
+      {
+        const cur = gameState.romajiArray[gameState.currentCharIndex];
+        if (cur && cur.hiragana === 'ん' && gameState.currentRomajiInput === 'n' && isConsonantForNCommit(typedLower)) {
+          // 直前の 'n' で「ん」を確定（※このキーはまだ消費しない）
+          handleKanaCompleted();
+          // 単語が終わっていれば、ここで終了（このキーは次の単語に持ち越さない）
+          if (!gameState.isPlaying || !gameState.currentWord) return;
+        }
+      }
+
+      // 現在のかなに対する入力として、このキーを追加
       gameState.currentRomajiInput += typedLower;
 
-      // 現在入力中のひらがなに対応する全パターンをチェック
       const currentChar = gameState.romajiArray[gameState.currentCharIndex];
       const possibleRomaji = currentChar.romaji;
 
@@ -1049,54 +1169,22 @@
       for (const pattern of possibleRomaji) {
         if (pattern.startsWith(gameState.currentRomajiInput)) {
           matched = true;
+          // ★「ん」は単独 'n' で即確定しない（nn / n' も許すため）
           if (pattern === gameState.currentRomajiInput) {
-            completed = true;
-            break;
+            if (!(currentChar.hiragana === 'ん' && gameState.currentRomajiInput === 'n')) {
+              completed = true;
+              break;
+            }
           }
         }
       }
 
       if (completed) {
-        // 文字完成
+        // 文字（かな）完成
         gameState.correctTyped++;
-        gameState.combo++;
-        gameState.score += 10 + Math.floor(gameState.combo / 5) * 5;
-        
-        if (gameState.combo > gameState.maxCombo) {
-          gameState.maxCombo = gameState.combo;
-        }
-
-        // 宇宙船を前進
-        spaceshipEl.classList.add('animate-ship-move');
-        setTimeout(() => spaceshipEl.classList.remove('animate-ship-move'), 500);
-
-        gameState.currentCharIndex++;
-        gameState.currentRomajiInput = '';
-
-        // 1文字目を正解したらヒントを自動表示
-        if (gameState.currentCharIndex === 1 && !gameState.hintShown) {
-          if (gameState.hintTimer) {
-            clearTimeout(gameState.hintTimer);
-          }
-          showHint();
-        }
-
-        if (gameState.currentCharIndex >= gameState.romajiArray.length) {
-          // 単語完成
-          gameState.score += 50;
-          signBoardEl.classList.add('animate-explosion');
-          setTimeout(() => {
-            signBoardEl.classList.remove('animate-explosion');
-            nextWord();
-          }, 500);
-        } else {
-          renderWord();
-        }
-
-        inputDisplayEl.textContent = '✓';
-        inputDisplayEl.style.color = config.primary_color || defaultConfig.primary_color;
+        handleKanaCompleted();
       } else if (matched) {
-        // 入力中
+        // 入力中（正しい前方一致）
         gameState.correctTyped++;
         inputDisplayEl.textContent = gameState.currentRomajiInput;
         inputDisplayEl.style.color = config.accent_color || defaultConfig.accent_color;
@@ -1106,7 +1194,6 @@
         gameState.currentRomajiInput = '';
         signBoardEl.classList.add('animate-shake');
         setTimeout(() => signBoardEl.classList.remove('animate-shake'), 400);
-        
         inputDisplayEl.textContent = 'ミス！';
         inputDisplayEl.style.color = '#ff4757';
       }
@@ -1118,67 +1205,44 @@
       updateGauge();
     }
 
-    // スコア更新
-    function updateScore() {
-      scoreEl.textContent = gameState.score;
-    }
+    function updateScore() { scoreEl.textContent = gameState.score; }
 
-    // 位置更新
     function updateLocation() {
       const planet = getPlanetByScore(gameState.score);
       locationEl.textContent = `${planet.emoji} ${planet.name}`;
       locationEl.style.color = planet.color;
-      
-      // 背景の惑星も更新
       planetBgEl.textContent = planet.emoji;
       planetBgEl.style.opacity = '0.15';
     }
 
-    // タイマー更新
     function updateTimer() {
       timerEl.textContent = gameState.timeLeft;
-      if (gameState.timeLeft <= 10) {
-        timerEl.style.color = '#ff4757';
-      } else {
-        timerEl.style.color = config.danger_color || defaultConfig.danger_color;
-      }
+      if (gameState.timeLeft <= 10) timerEl.style.color = '#ff4757';
+      else timerEl.style.color = config.danger_color || defaultConfig.danger_color;
     }
 
-    // 正確率更新
     function updateAccuracy() {
-      const accuracy = gameState.totalTyped > 0 
-        ? Math.round((gameState.correctTyped / gameState.totalTyped) * 100) 
-        : 100;
+      const accuracy = gameState.totalTyped > 0 ? Math.round((gameState.correctTyped / gameState.totalTyped) * 100) : 100;
       accuracyEl.textContent = accuracy + '%';
     }
 
-    // コンボ更新
     function updateCombo() {
-      if (gameState.combo >= 5) {
-        comboCountEl.textContent = `🔥 ${gameState.combo} COMBO!`;
-      } else {
-        comboCountEl.textContent = '';
-      }
+      if (gameState.combo >= 5) comboCountEl.textContent = `🔥 ${gameState.combo} COMBO!`;
+      else comboCountEl.textContent = '';
     }
 
-    // フライトアニメーション
     function playFlightAnimation(targetScore) {
       return new Promise((resolve) => {
         const flightAnimationEl = document.getElementById('flight-animation');
         const flightRocketEl = document.getElementById('flight-rocket');
         const flightPlanetsEl = document.getElementById('flight-planets');
-        
-        if (!flightAnimationEl || !flightRocketEl || !flightPlanetsEl) {
-          resolve();
-          return;
-        }
 
+        if (!flightAnimationEl || !flightRocketEl || !flightPlanetsEl) { resolve(); return; }
         flightAnimationEl.classList.remove('hidden');
-        
-        // 惑星マーカーを配置
+
         const maxDistance = planets[planets.length - 1].distance;
         flightPlanetsEl.innerHTML = '';
-        
+
         planets.forEach(planet => {
           const position = (planet.distance / maxDistance) * 100;
           const marker = document.createElement('div');
@@ -1189,22 +1253,16 @@
           flightPlanetsEl.appendChild(marker);
         });
 
-        // 目標位置を計算
         const targetPosition = Math.min((targetScore / maxDistance) * 100, 100);
         flightRocketEl.style.setProperty('--flight-end', `${targetPosition}%`);
-        
-        // アニメーション開始
         flightRocketEl.style.animation = 'rocket-flight 3s ease-in-out forwards';
-        
-        // 惑星を順番に表示
+
         let delay = 0;
         planets.forEach((planet, index) => {
           if (targetScore >= planet.distance) {
             setTimeout(() => {
               const markers = flightPlanetsEl.children;
-              if (markers[index]) {
-                markers[index].style.animation = 'planet-pass 1s ease-in-out forwards';
-              }
+              if (markers[index]) markers[index].style.animation = 'planet-pass 1s ease-in-out forwards';
             }, delay);
             delay += 500;
           }
@@ -1218,95 +1276,117 @@
       });
     }
 
-    // ニックネーム登録
     submitNicknameBtn.addEventListener('click', async () => {
       const nickname = nicknameInput.value.trim();
       if (pendingScore) {
-        await saveScore(
-          pendingScore.score,
-          pendingScore.planetName,
-          pendingScore.planetEmoji,
-          nickname
-        );
+        await saveScore(pendingScore.score, pendingScore.planetName, pendingScore.planetEmoji, nickname);
         pendingScore = null;
       }
     });
 
-    // Enterキーでも登録
     nicknameInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        submitNicknameBtn.click();
-      }
+      if (e.key === 'Enter') submitNicknameBtn.click();
     });
 
-    // ゲーム終了
     async function endGame() {
+      // ⏸ BGM停止
+      const bgm = document.getElementById('bgm');
+      if (bgm) {
+        bgm.pause();
+        bgm.currentTime = 0;
+      }
       gameState.isPlaying = false;
       clearInterval(gameState.timer);
-      if (gameState.hintTimer) {
-        clearTimeout(gameState.hintTimer);
-      }
+      if (gameState.hintTimer) clearTimeout(gameState.hintTimer);
 
       const finalPlanet = getPlanetByScore(gameState.score);
-      
-      // トップ10に入るかチェック
       isTop10 = checkTop10(gameState.score);
-      
+
       gameScreen.classList.add('hidden');
       resultScreen.classList.remove('hidden');
 
-      // フライトアニメーション再生
       await playFlightAnimation(gameState.score);
-      
+
       document.getElementById('final-planet-emoji').textContent = finalPlanet.emoji;
       document.getElementById('final-planet-emoji').classList.add('animate-planet-arrive');
       document.getElementById('final-location').textContent = `到達地点：${finalPlanet.emoji} ${finalPlanet.name}`;
       document.getElementById('final-location').style.color = finalPlanet.color;
-      
-      // 新記録メッセージとニックネーム入力フォーム表示
+
       const newRecordMessageEl = document.getElementById('new-record-message');
       if (newRecordMessageEl && nicknameForm) {
         if (isTop10) {
+          // 🎺 トップ10入りファンファーレ
+          playSfx('sfx-fanfare', 0.7);
           newRecordMessageEl.classList.remove('hidden');
           nicknameForm.classList.remove('hidden');
           nicknameInput.value = '';
           nicknameInput.focus();
-          
-          // スコアを一時保存
-          pendingScore = {
-            score: gameState.score,
-            planetName: finalPlanet.name,
-            planetEmoji: finalPlanet.emoji
-          };
+          pendingScore = { score: gameState.score, planetName: finalPlanet.name, planetEmoji: finalPlanet.emoji };
         } else {
           newRecordMessageEl.classList.add('hidden');
           nicknameForm.classList.add('hidden');
-          // トップ10に入らない場合はニックネームなしで保存
           await saveScore(gameState.score, finalPlanet.name, finalPlanet.emoji, null);
         }
       }
-      
+
       document.getElementById('final-score').textContent = gameState.score;
       document.getElementById('final-typed').textContent = gameState.correctTyped;
-      document.getElementById('final-accuracy').textContent = 
-        (gameState.totalTyped > 0 ? Math.round((gameState.correctTyped / gameState.totalTyped) * 100) : 100) + '%';
+      document.getElementById('final-accuracy').textContent = (gameState.totalTyped > 0 ? Math.round((gameState.correctTyped / gameState.totalTyped) * 100) : 100) + '%';
       document.getElementById('final-combo').textContent = gameState.maxCombo;
-      
+
       updateBestScoresDisplay();
     }
 
-    // イベントリスナー
     retryBtn.addEventListener('click', () => {
+      // 念のため効果音停止
+      stopAudio('sfx-explosion');
+      stopAudio('sfx-fanfare');
+      // ⏸ BGM停止（再挑戦時）
+      const bgm = document.getElementById('bgm');
+      if (bgm) {
+        bgm.pause();
+        bgm.currentTime = 0;
+      }
       resultScreen.classList.add('hidden');
       courseScreen.classList.remove('hidden');
     });
-    
+
     document.addEventListener('keydown', handleInput);
-    
-    document.getElementById('app').addEventListener('click', () => {
-      if (gameState.isPlaying) {
-        hiddenInput.focus();
+
+    // ============================
+    // ESCでタイトルへ戻る（ゲーム中のみ）
+    // ============================
+    function returnToTitleScreen() {
+      // ゲームを完全停止
+      gameState.isPlaying = false;
+      try { clearInterval(gameState.timer); } catch (_) {}
+      try { if (gameState.hintTimer) clearTimeout(gameState.hintTimer); } catch (_) {}
+
+      // 音停止
+      stopAudio('sfx-explosion');
+      stopAudio('sfx-fanfare');
+      stopAudio('bgm');
+
+      // 画面をタイトルへ
+      gameScreen.classList.add('hidden');
+      resultScreen.classList.add('hidden');
+      courseScreen.classList.add('hidden');
+      startScreen.classList.remove('hidden');
+
+      // 入力をクリア
+      if (hiddenInput) hiddenInput.value = '';
+      if (nicknameInput) nicknameInput.value = '';
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && gameState.isPlaying) {
+        e.preventDefault();
+        returnToTitleScreen();
       }
+    });
+
+    document.getElementById('app').addEventListener('click', () => {
+      if (gameState.isPlaying) hiddenInput.focus();
     });
 
     // Element SDK
@@ -1314,22 +1394,22 @@
       const titleEl = document.getElementById('title');
       const startBtnEl = document.getElementById('start-btn');
       const appEl = document.getElementById('app');
-      
+
       if (titleEl) {
         titleEl.textContent = newConfig.game_title || defaultConfig.game_title;
         titleEl.style.color = newConfig.primary_color || defaultConfig.primary_color;
-        titleEl.style.textShadow = `0 0 40px ${newConfig.primary_color || defaultConfig.primary_color}80, 0 0 80px ${newConfig.primary_color || defaultConfig.primary_color}40`;
+        titleEl.style.textShadow = `0 0 40px ${(newConfig.primary_color || defaultConfig.primary_color)}80, 0 0 80px ${(newConfig.primary_color || defaultConfig.primary_color)}40`;
       }
-      
+
       if (startBtnEl) {
         startBtnEl.textContent = newConfig.start_button_text || defaultConfig.start_button_text;
         startBtnEl.style.background = `linear-gradient(135deg, ${newConfig.primary_color || defaultConfig.primary_color} 0%, #0099ff 100%)`;
       }
-      
+
       if (appEl) {
         appEl.style.background = `linear-gradient(180deg, ${newConfig.background_start || defaultConfig.background_start} 0%, ${newConfig.background_end || defaultConfig.background_end} 100%)`;
       }
-      
+
       if (scoreEl) {
         scoreEl.style.color = newConfig.primary_color || defaultConfig.primary_color;
       }
@@ -1373,19 +1453,147 @@
       ]);
     }
 
-    // SDK初期化
     if (window.elementSdk) {
-      window.elementSdk.init({
-        defaultConfig,
-        onConfigChange,
-        mapToCapabilities,
-        mapToEditPanelValues
-      });
+      window.elementSdk.init({ defaultConfig, onConfigChange, mapToCapabilities, mapToEditPanelValues });
       config = window.elementSdk.config || defaultConfig;
     }
 
-    // Data SDK初期化
-    initDataSdk();
+    // Firebase初期化（順序を保証する）
+    (async () => {
+      const ok = await initFirebaseAndAuth();
+      if (ok) await loadAllTopScores();
+    })();
+
+    // ============================
+    // Self-tests (disabled by default)
+    // ============================
+    const RUN_SELF_TESTS = false;
+
+    function acceptsRomaji(answerHiragana, romajiInput) {
+      // ゲーム本体と同じ分解表を使う
+      const arr = convertHiraganaToRomajiArray(answerHiragana);
+      let idx = 0;
+      let buf = '';
+
+      function isVowelChar2(ch) {
+        return ch === 'a' || ch === 'i' || ch === 'u' || ch === 'e' || ch === 'o';
+      }
+      function isConsonantForNCommit2(ch) {
+        return /^[a-z]$/.test(ch) && !isVowelChar2(ch) && ch !== 'y' && ch !== 'n';
+      }
+
+      for (let pos = 0; pos < romajiInput.length; pos++) {
+        const raw = romajiInput[pos];
+        const ch = raw.toLowerCase();
+        if (!(/[a-z]/.test(ch) || ch === "'")) return false;
+        if (idx >= arr.length) return false;
+
+        // 「ん」：buf==='n' のときに子音が来たら確定して次へ（このキーは次のかなに回す）
+        if (arr[idx].hiragana === 'ん' && buf === 'n' && isConsonantForNCommit2(ch)) {
+          idx++;
+          buf = '';
+          if (idx >= arr.length) return false;
+        }
+
+        buf += ch;
+
+        const patterns = arr[idx].romaji;
+        let matched = false;
+        let completed = false;
+        for (const p of patterns) {
+          if (p.startsWith(buf)) {
+            matched = true;
+            if (p === buf) {
+              if (!(arr[idx].hiragana === 'ん' && buf === 'n')) {
+                completed = true;
+                break;
+              }
+            }
+          }
+        }
+        if (!matched) return false;
+        if (completed) {
+          idx++;
+          buf = '';
+        }
+      }
+
+      // 入力が終わった時点で、すべて確定していればOK
+      // 「ん」の buf==='n' は「入力終了」で確定してOKにする
+      if (idx === arr.length) return buf === '';
+      if (idx === arr.length - 1 && arr[idx].hiragana === 'ん' && buf === 'n') return true;
+      return false;
+    }
+
+    function runSelfTests() {
+      try {
+        // ひらがな→ローマ字の基本
+        const a = convertHiraganaToRomajiArray('し');
+        console.assert(Array.isArray(a) && a.length === 1, 'Test: single char array');
+        console.assert(a[0].romaji.includes('shi') && a[0].romaji.includes('si'), 'Test: shi/si alternatives');
+
+        // 「ん」 n / nn / n'
+        const n1 = convertHiraganaToRomajiArray('ん');
+        console.assert(n1.length === 1 && n1[0].romaji.includes('n') && n1[0].romaji.includes('nn') && n1[0].romaji.includes("n'"), "Test: 'ん' accepts n/nn/n'" );
+
+        // 「を」 wo / o
+        const wo = convertHiraganaToRomajiArray('を');
+        console.assert(wo.length === 1 && wo[0].romaji.includes('wo') && wo[0].romaji.includes('o'), "Test: 'を' accepts wo/o" );
+
+        // 「づ」 du / zu / dzu
+        const dzu = convertHiraganaToRomajiArray('づ');
+        console.assert(dzu.length === 1 && dzu[0].romaji.includes('du') && dzu[0].romaji.includes('zu') && dzu[0].romaji.includes('dzu'), "Test: 'づ' accepts du/zu/dzu" );
+
+        // 「ぢ」 di / ji / dji
+        const dji = convertHiraganaToRomajiArray('ぢ');
+        console.assert(dji.length === 1 && dji[0].romaji.includes('di') && dji[0].romaji.includes('ji') && dji[0].romaji.includes('dji'), "Test: 'ぢ' accepts di/ji/dji" );
+
+        // 拗音
+        const b = convertHiraganaToRomajiArray('きゃ');
+        console.assert(b.length === 1 && b[0].romaji.includes('kya'), 'Test: digraph kya');
+
+        // 促音
+        const c = convertHiraganaToRomajiArray('がっこう');
+        console.assert(c.length >= 4, 'Test: sokuon split');
+
+        // Top10判定
+        gameState.selectedCourse = 'creature';
+        scoreHistory.creature = new Array(10).fill(0).map((_, i) => ({ score: 100 - i }));
+        console.assert(checkTop10(200) === true, 'Test: score higher than 10th');
+        console.assert(checkTop10(0) === false, 'Test: score lower than 10th');
+        console.assert(checkTop10(91) === false, 'Test: tie with 10th is NOT top10');
+
+        // nicknameサニタイズ
+        // ※JSの文字列リテラルに実改行を入れると SyntaxError になるため、\n/\t を使う
+        const s = ' A\nB\tC\nD ';
+        const out = s.replace(/[ \r\n\t]+/g, '');
+        console.assert(out === 'ABCD', 'Test: nickname sanitize regex');
+
+        // コレクション名
+        console.assert(getRankingCollectionName() === 'typing_scores', 'Test: collection name');
+
+        // 促音＋ち：「すけっち」→ sukecchi / suketti
+        const sc = convertHiraganaToRomajiArray('すけっち');
+        const joined = sc.map(x => x.romaji).flat();
+        console.assert(joined.some(r => r.startsWith('c')) && joined.some(r => r.startsWith('t')), "Test: sokuon+chi supports c/t (sukecchi/suketti)");
+
+        // ★追加テスト：「ん」の二重n問題（らんせい）
+        console.assert(acceptsRomaji('らんせい', 'ransei') === true, "Test: らんせい accepts ransei");
+        console.assert(acceptsRomaji('らんせい', 'rannsei') === true, "Test: らんせい accepts rannsei (nn)");
+        console.assert(acceptsRomaji('かんさい', 'kansai') === true, "Test: かんさい accepts kansai (n before consonant)");
+
+        // ★追加テスト：長音符「ー」
+        console.assert(acceptsRomaji('らーめん', 'ra-men') === true, "Test: らーめん accepts ra-men");
+
+        console.log('Self-tests: OK');
+      } catch (e) {
+        console.error('Self-tests failed:', e);
+      }
+    }
+
+    if (RUN_SELF_TESTS) runSelfTests();
   </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9c75d296b65b38f1',t:'MTc2OTk5NDc3MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+
+  <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9c75d296b65b38f1',t:'MTc2OTk5NDc3MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+ </body>
 </html>
