@@ -611,7 +611,11 @@
     let pendingScore = null;
 
     // ===== Firebase / Firestore =====
-    // ※「論理リセット」用：この数値を変更すると、過去のランキングを無視して新しいランキングとして扱います。
+    // ランキング保存先のテーマキー（宇宙版と分離するために変更）
+    const RANKING_THEME_KEY = 'time_travel';
+    // シーズン識別子（ここを書き換えるだけで新シーズンへ切替）
+    const RANKING_SEASON = 'season_1';
+    // ※「論理リセット」用：この数値を変更すると、同一シーズン内でも過去ランキングを無視します。
     const RANKING_SCHEMA_VERSION = 1;
 
     const firebaseConfig = {
@@ -652,10 +656,11 @@
     }
 
     // ✅ Firestoreコレクション名
-    // 重要：あなたのFirestoreルールは /typing_scores/{document} にのみ許可があります。
-    // そのため、コード側も必ず typing_scores を使います。
+    // テーマ＋シーズンごとに保存先を分ける（例: typing_scores_time_travel_season_1）
     function getRankingCollectionName() {
-      return 'typing_scores';
+      const normalizedTheme = String(RANKING_THEME_KEY || 'default').toLowerCase().replace(/[^a-z0-9_]+/g, '_');
+      const normalizedSeason = String(RANKING_SEASON || 'season_0').toLowerCase().replace(/[^a-z0-9_]+/g, '_');
+      return `typing_scores_${normalizedTheme}_${normalizedSeason}`;
     }
 
 
@@ -687,6 +692,8 @@
         const snap = await db
           .collection(colName)
           .where('schema_version', '==', RANKING_SCHEMA_VERSION)
+          .where('ranking_theme', '==', RANKING_THEME_KEY)
+          .where('ranking_season', '==', RANKING_SEASON)
           .where('course', '==', course)
           .orderBy('score', 'desc')
           .limit(50)
@@ -738,6 +745,8 @@
         snap2.forEach(doc => {
           const d = doc.data() || {};
           if (Number(d.schema_version) !== Number(RANKING_SCHEMA_VERSION)) return;
+          if (String(d.ranking_theme || '') !== String(RANKING_THEME_KEY)) return;
+          if (String(d.ranking_season || '') !== String(RANKING_SEASON)) return;
           if (String(d.course || '') !== String(course)) return;
           list2.push({
             score: Number(d.score || 0),
@@ -846,7 +855,7 @@
         if (!authed) throw new Error('匿名ログインに失敗したため、ランキング保存ができませんでした。');
 
         const course = gameState.selectedCourse;
-        const colName = getRankingCollectionName(course);
+        const colName = getRankingCollectionName();
 
         // ニックネーム：改行・タブ・スペースを除去して6文字まで
         const safeNickname = (nickname && nickname.length ? nickname : '名無し')
@@ -855,6 +864,8 @@
 
         await db.collection(colName).add({
           schema_version: RANKING_SCHEMA_VERSION,
+          ranking_theme: RANKING_THEME_KEY,
+          ranking_season: RANKING_SEASON,
           course,
           score: Number(score || 0),
           planet_name: planetName,
@@ -1568,7 +1579,7 @@
         console.assert(out === 'ABCD', 'Test: nickname sanitize regex');
 
         // コレクション名
-        console.assert(getRankingCollectionName() === 'typing_scores', 'Test: collection name');
+        console.assert(getRankingCollectionName() === 'typing_scores_time_travel_season_1', 'Test: collection name');
 
         // 促音＋ち：「すけっち」→ sukecchi / suketti
         const sc = convertHiraganaToRomajiArray('すけっち');
