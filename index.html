@@ -3,7 +3,7 @@
  <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>中１宇宙タイピングクエスト</title>
+  <title>中１タイムトラベルタイピングクエスト</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="/_sdk/element_sdk.js"></script>
   <script src="/_sdk/data_sdk.js"></script>
@@ -101,15 +101,12 @@
       width: 200%;
       height: 200%;
       background-image:
-        radial-gradient(2px 2px at 20% 30%, white, transparent),
-        radial-gradient(2px 2px at 60% 70%, white, transparent),
-        radial-gradient(1px 1px at 50% 50%, white, transparent),
-        radial-gradient(1px 1px at 80% 10%, white, transparent),
-        radial-gradient(2px 2px at 90% 60%, white, transparent),
-        radial-gradient(1px 1px at 33% 80%, white, transparent),
-        radial-gradient(1px 1px at 15% 90%, white, transparent);
-      background-size: 200px 200px;
-      background-position: 0 0, 40px 60px, 130px 270px, 70px 100px, 150px 50px, 90px 180px, 30px 220px;
+        radial-gradient(circle at 20% 25%, rgba(255, 235, 180, 0.35), transparent 18%),
+        radial-gradient(circle at 75% 15%, rgba(170, 220, 255, 0.28), transparent 20%),
+        radial-gradient(circle at 30% 78%, rgba(255, 180, 220, 0.25), transparent 22%),
+        repeating-radial-gradient(circle at center, rgba(255,255,255,0.16) 0 2px, transparent 2px 14px);
+      background-size: 180% 180%, 160% 160%, 170% 170%, 100% 100%;
+      background-position: center;
       animation: stars-move 20s linear infinite;
     }
 
@@ -119,23 +116,22 @@
       width: 100%;
       height: 100%;
       background-image:
-        radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.8), transparent),
-        radial-gradient(1px 1px at 70% 40%, rgba(255,255,255,0.8), transparent),
-        radial-gradient(1px 1px at 30% 60%, rgba(255,255,255,0.8), transparent),
-        radial-gradient(1px 1px at 85% 80%, rgba(255,255,255,0.8), transparent);
-      background-size: 300px 300px;
+        linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 45%),
+        radial-gradient(circle at 65% 62%, rgba(130, 195, 255, 0.2), transparent 30%),
+        radial-gradient(circle at 38% 40%, rgba(255, 186, 120, 0.18), transparent 32%);
+      background-size: cover;
       animation: stars-twinkle 3s ease-in-out infinite;
     }
 
     .sign-board {
-      background: linear-gradient(135deg, rgba(255, 193, 7, 0.2) 0%, rgba(255, 152, 0, 0.2) 100%);
-      border: 3px solid #ffc107;
-      box-shadow: 0 0 30px rgba(255, 193, 7, 0.5), inset 0 0 20px rgba(255, 193, 7, 0.2);
+      background: linear-gradient(135deg, rgba(82, 59, 36, 0.85) 0%, rgba(53, 39, 25, 0.88) 100%);
+      border: 3px solid #c89b67;
+      box-shadow: 0 0 30px rgba(200, 155, 103, 0.45), inset 0 0 20px rgba(255, 231, 198, 0.1);
     }
 
     .spaceship {
       font-size: 4rem;
-      filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.8));
+      filter: drop-shadow(0 0 20px rgba(255, 213, 128, 0.8));
     }
 
     .planet-display {
@@ -153,23 +149,23 @@
   <style>@view-transition { navigation: auto; }</style>
  </head>
  <body class="h-full m-0 p-0 overflow-auto">
-  <!-- 🎵 BGM（宇宙風・ループ再生） -->
+  <!-- 🎵 BGM（ループ再生） -->
   <audio id="bgm" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_8c3a6a6f7c.mp3?filename=space-ambient-110624.mp3" loop preload="auto"></audio>
   <!-- 🔊 効果音 -->
   <audio id="sfx-explosion" src="https://cdn.pixabay.com/download/audio/2022/03/10/audio_2d6b9f1e7a.mp3?filename=explosion-6087.mp3" preload="auto"></audio>
   <audio id="sfx-fanfare" src="https://cdn.pixabay.com/download/audio/2022/03/24/audio_9c2a1a46a8.mp3?filename=success-fanfare-trumpets-6185.mp3" preload="auto"></audio>
-  <div id="app" class="w-full min-h-full stars-bg flex flex-col items-center justify-center p-6" style="background: linear-gradient(180deg, #000428 0%, #004e92 100%);"><!-- 背景の惑星表示 -->
-   <div id="planet-bg" class="planet-display">🌍</div>
+  <div id="app" class="w-full min-h-full stars-bg flex flex-col items-center justify-center p-6" style="background: linear-gradient(180deg, #201613 0%, #4d2f1f 45%, #7d5b3a 100%);"><!-- 背景の時代表示 -->
+   <div id="planet-bg" class="planet-display">🏺</div>
 
    <!-- スタート画面 -->
    <div id="start-screen" class="text-center relative z-10">
     <div class="animate-float mb-8">
-     <div class="text-7xl mb-6">🚀</div>
-     <h1 id="title" class="font-game text-5xl md:text-6xl font-black tracking-wider mb-4" style="color: #00ffff; text-shadow: 0 0 40px rgba(0, 255, 255, 0.8), 0 0 80px rgba(0, 255, 255, 0.4);">中１宇宙タイピングクエスト</h1>
-     <div class="font-jp text-xl mb-2" style="color: #ffd700;">🌌 宇宙からのミッション 🌌</div>
-     <p class="font-jp text-gray-300 text-lg leading-relaxed">看板の問題を答えて打ち破り、<br>宇宙の彼方へ進め！</p>
+     <div class="text-7xl mb-6">🕰️</div>
+     <h1 id="title" class="font-game text-5xl md:text-6xl font-black tracking-wider mb-4" style="color: #ffdc9d; text-shadow: 0 0 40px rgba(255, 220, 157, 0.8), 0 0 80px rgba(255, 161, 87, 0.4);">中１タイムトラベルタイピングクエスト</h1>
+     <div class="font-jp text-xl mb-2" style="color: #ffd7a0;">⌛ 時空ミッション開始 ⌛</div>
+     <p class="font-jp text-gray-200 text-lg leading-relaxed">看板の問題を答えて突破し、<br>時代を越えて未来へ進め！</p>
     </div>
-    <button id="start-btn" class="font-game text-2xl px-16 py-5 rounded-2xl font-bold transition-all duration-300 hover:scale-110 hover:shadow-2xl" style="background: linear-gradient(135deg, #00ffff 0%, #0099ff 100%); color: #000428; box-shadow: 0 0 30px rgba(0, 255, 255, 0.6);"> 🚀 出発 </button>
+    <button id="start-btn" class="font-game text-2xl px-16 py-5 rounded-2xl font-bold transition-all duration-300 hover:scale-110 hover:shadow-2xl" style="background: linear-gradient(135deg, #ffd89b 0%, #c47838 100%); color: #2d1c12; box-shadow: 0 0 30px rgba(255, 205, 140, 0.55);"> 🕰️ タイムジャンプ </button>
     <div class="mt-10 font-jp text-gray-400 text-sm">
      <p>💡 看板の問題に、ひらがなをローマ字で答えよう</p>
      <p class="mt-2">5秒後にヒントが表示されます</p>
@@ -213,25 +209,25 @@
     <!-- サイドゲージ -->
     <div class="hidden md:block w-32 flex-shrink-0">
      <div class="sticky top-6">
-      <div class="font-jp text-sm text-center mb-3" style="color: #00ffff;">進行状況</div>
-      <div class="relative rounded-full p-2" style="background: rgba(0, 0, 0, 0.6); border: 2px solid rgba(0, 255, 255, 0.3); height: 500px;">
+      <div class="font-jp text-sm text-center mb-3" style="color: #ffd7a0;">時代進行</div>
+      <div class="relative rounded-full p-2" style="background: rgba(28, 17, 10, 0.75); border: 2px solid rgba(255, 215, 160, 0.45); height: 500px;">
        <div class="absolute bottom-2 left-2 right-2 rounded-full" style="background: rgba(255, 255, 255, 0.1); top: 2px;"></div>
-       <div id="progress-gauge" class="absolute bottom-2 left-2 right-2 rounded-full transition-all duration-500" style="background: linear-gradient(to top, #00ffff, #0099ff); height: 0%; box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);"></div>
+       <div id="progress-gauge" class="absolute bottom-2 left-2 right-2 rounded-full transition-all duration-500" style="background: linear-gradient(to top, #ffd89b, #b7793f); height: 0%; box-shadow: 0 0 20px rgba(255, 205, 140, 0.6);"></div>
        <div id="planet-markers" class="absolute inset-0"></div>
-       <div id="ship-marker" class="absolute left-1/2 transform -translate-x-1/2 transition-all duration-500 text-3xl" style="bottom: 0%;">🚀</div>
+       <div id="ship-marker" class="absolute left-1/2 transform -translate-x-1/2 transition-all duration-500 text-3xl" style="bottom: 0%;">🛸</div>
       </div>
-      <div id="gauge-planet-name" class="font-jp text-xs text-center mt-3" style="color: #ffd700;">🌍 地球</div>
+      <div id="gauge-planet-name" class="font-jp text-xs text-center mt-3" style="color: #ffd7a0;">🏺 縄文時代</div>
      </div>
     </div>
 
     <!-- メインゲームエリア -->
     <div class="flex-1">
-     <div class="text-center mb-6"><div id="spaceship" class="spaceship inline-block">🚀</div></div>
+     <div class="text-center mb-6"><div id="spaceship" class="spaceship inline-block">🛸</div></div>
 
      <!-- ステータスバー -->
      <div class="flex justify-between items-center mb-6 px-4 rounded-xl p-4" style="background: rgba(0, 0, 0, 0.5); border: 2px solid rgba(0, 255, 255, 0.3);">
       <div class="text-center"><div class="font-jp text-gray-400 text-sm mb-1">スコア</div><div id="score" class="font-game text-3xl font-bold" style="color: #00ffff;">0</div></div>
-      <div class="text-center"><div class="font-jp text-gray-400 text-sm mb-1">現在地</div><div id="location" class="font-jp text-xl font-bold" style="color: #ffd700;">🌍 地球</div></div>
+      <div class="text-center"><div class="font-jp text-gray-400 text-sm mb-1">現在地</div><div id="location" class="font-jp text-xl font-bold" style="color: #ffd7a0;">🏺 縄文時代</div></div>
       <div class="text-center"><div class="font-jp text-gray-400 text-sm mb-1">残り時間</div><div id="timer" class="font-game text-3xl font-bold" style="color: #ff6b9d;">60</div></div>
       <div class="text-center"><div class="font-jp text-gray-400 text-sm mb-1">正確率</div><div id="accuracy" class="font-game text-3xl font-bold" style="color: #00ff88;">100%</div></div>
      </div>
@@ -265,7 +261,7 @@
      <div class="relative w-full h-full">
       <div id="flight-gauge" class="absolute left-1/2 transform -translate-x-1/2 w-32" style="height: 80%; top: 10%;">
        <div class="relative h-full rounded-full p-2" style="background: rgba(0, 0, 0, 0.8); border: 3px solid rgba(0, 255, 255, 0.5);">
-        <div id="flight-rocket" class="absolute text-5xl" style="bottom: 0%; left: 50%; transform: translateX(-50%);">🚀</div>
+        <div id="flight-rocket" class="absolute text-5xl" style="bottom: 0%; left: 50%; transform: translateX(-50%);">🛸</div>
         <div id="flight-planets"></div>
        </div>
       </div>
@@ -273,9 +269,9 @@
     </div>
 
     <div class="mb-8 animate-fadeIn">
-     <div id="final-planet-emoji" class="text-8xl mb-6">🌍</div>
-     <h2 class="font-game text-4xl font-bold mb-4" style="color: #00ffff; text-shadow: 0 0 30px rgba(0, 255, 255, 0.8);">ミッション完了！</h2>
-     <div id="final-location" class="font-jp text-2xl mb-6" style="color: #ffd700;">到達地点：🌍 地球</div>
+     <div id="final-planet-emoji" class="text-8xl mb-6">🏺</div>
+     <h2 class="font-game text-4xl font-bold mb-4" style="color: #ffdc9d; text-shadow: 0 0 30px rgba(255, 220, 157, 0.75);">時空航行完了！</h2>
+     <div id="final-location" class="font-jp text-2xl mb-6" style="color: #ffd7a0;">到達時代：🏺 縄文時代</div>
      <div id="new-record-message" class="hidden font-jp text-2xl mb-6 animate-fadeIn" style="color: #ff6b9d; text-shadow: 0 0 20px rgba(255, 107, 157, 0.8);">🎉 トップ10入り！ニックネームを登録しよう！ 🎉</div>
     </div>
 
@@ -309,12 +305,12 @@
 
   <script>
     const defaultConfig = {
-      game_title: '中１宇宙タイピングクエスト',
-      start_button_text: '🚀 出発',
-      background_start: '#000428',
-      background_end: '#004e92',
-      primary_color: '#00ffff',
-      accent_color: '#ffd700',
+      game_title: '中１タイムトラベルタイピングクエスト',
+      start_button_text: '🕰️ タイムジャンプ',
+      background_start: '#201613',
+      background_end: '#7d5b3a',
+      primary_color: '#ffdc9d',
+      accent_color: '#ffd7a0',
       danger_color: '#ff6b9d'
     };
 
@@ -378,17 +374,19 @@
       'っ': ['ltu', 'xtu', 'ltsu']
     };
 
-    // 太陽系の惑星データ（2000点で太陽系の外へ）
+    // 時代データ（2000点で令和へ）
     const planets = [
-      { name: '地球', distance: 0, emoji: '🌍', color: '#4a90e2' },
-      { name: '月', distance: 120, emoji: '🌙', color: '#b8c5d6' },
-      { name: '火星', distance: 300, emoji: '🔴', color: '#e74c3c' },
-      { name: '木星', distance: 550, emoji: '🟠', color: '#f39c12' },
-      { name: '土星', distance: 850, emoji: '🪐', color: '#f1c40f' },
-      { name: '天王星', distance: 1200, emoji: '🔵', color: '#3498db' },
-      { name: '海王星', distance: 1550, emoji: '💙', color: '#2980b9' },
-      { name: '冥王星', distance: 1800, emoji: '⚫', color: '#95a5a6' },
-      { name: '太陽系の外', distance: 2000, emoji: '✨', color: '#9b59b6' }
+      { name: '縄文時代', distance: 0, emoji: '🏺', color: '#c28a52' },
+      { name: '弥生時代', distance: 120, emoji: '🌾', color: '#d3a85b' },
+      { name: '平安時代', distance: 300, emoji: '🎎', color: '#b07ec8' },
+      { name: '鎌倉時代', distance: 550, emoji: '⚔️', color: '#8d6e63' },
+      { name: '戦国時代', distance: 850, emoji: '🪖', color: '#9c5d4f' },
+      { name: '江戸時代', distance: 1200, emoji: '🏯', color: '#6f8ea8' },
+      { name: '明治時代', distance: 1400, emoji: '🚂', color: '#4f7d6b' },
+      { name: '大正時代', distance: 1600, emoji: '📰', color: '#547a9b' },
+      { name: '昭和時代', distance: 1750, emoji: '📺', color: '#6f6d9b' },
+      { name: '平成', distance: 1900, emoji: '💿', color: '#5f8bb5' },
+      { name: '令和', distance: 2000, emoji: '🌸', color: '#d46a8f' }
     ];
 
     // 単語リスト（コース別）
@@ -699,8 +697,8 @@
           const d = doc.data() || {};
           list.push({
             score: Number(d.score || 0),
-            planet_name: d.planet_name || '地球',
-            planet_emoji: d.planet_emoji || '🌍',
+            planet_name: d.planet_name || '縄文時代',
+            planet_emoji: d.planet_emoji || '🏺',
             course,
             nickname: d.nickname || '名無し',
             timestamp: (d.timestamp || '')
@@ -743,8 +741,8 @@
           if (String(d.course || '') !== String(course)) return;
           list2.push({
             score: Number(d.score || 0),
-            planet_name: d.planet_name || '地球',
-            planet_emoji: d.planet_emoji || '🌍',
+            planet_name: d.planet_name || '縄文時代',
+            planet_emoji: d.planet_emoji || '🏺',
             course,
             nickname: d.nickname || '名無し',
             timestamp: (d.timestamp || '')
@@ -1100,7 +1098,7 @@
       gameState.score += 10 + Math.floor(gameState.combo / 5) * 5;
       if (gameState.combo > gameState.maxCombo) gameState.maxCombo = gameState.combo;
 
-      // 宇宙船を前進
+      // タイムマシンを前進
       spaceshipEl.classList.add('animate-ship-move');
       setTimeout(() => spaceshipEl.classList.remove('animate-ship-move'), 500);
 
@@ -1309,7 +1307,7 @@
 
       document.getElementById('final-planet-emoji').textContent = finalPlanet.emoji;
       document.getElementById('final-planet-emoji').classList.add('animate-planet-arrive');
-      document.getElementById('final-location').textContent = `到達地点：${finalPlanet.emoji} ${finalPlanet.name}`;
+      document.getElementById('final-location').textContent = `到達時代：${finalPlanet.emoji} ${finalPlanet.name}`;
       document.getElementById('final-location').style.color = finalPlanet.color;
 
       const newRecordMessageEl = document.getElementById('new-record-message');
@@ -1403,7 +1401,7 @@
 
       if (startBtnEl) {
         startBtnEl.textContent = newConfig.start_button_text || defaultConfig.start_button_text;
-        startBtnEl.style.background = `linear-gradient(135deg, ${newConfig.primary_color || defaultConfig.primary_color} 0%, #0099ff 100%)`;
+        startBtnEl.style.background = `linear-gradient(135deg, ${newConfig.primary_color || defaultConfig.primary_color} 0%, #c47838 100%)`;
       }
 
       if (appEl) {
