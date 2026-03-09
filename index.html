@@ -613,7 +613,11 @@
     let pendingScore = null;
 
     // ===== Firebase / Firestore =====
-    // ※「論理リセット」用：この数値を変更すると、過去のランキングを無視して新しいランキングとして扱います。
+    // ランキング保存先のテーマキー（宇宙旅行版）
+    const RANKING_THEME_KEY = 'space_tour';
+    // シーズン識別子（ここを書き換えるだけで新シーズンへ切替）
+    const RANKING_SEASON = 'season_1';
+    // ※「論理リセット」用：この数値を変更すると、同一シーズン内でも過去ランキングを無視します。
     const RANKING_SCHEMA_VERSION = 1;
 
     const firebaseConfig = {
@@ -688,6 +692,8 @@
       try {
         const snap = await db
           .collection(colName)
+          .where('theme_key', '==', RANKING_THEME_KEY)
+          .where('season', '==', RANKING_SEASON)
           .where('schema_version', '==', RANKING_SCHEMA_VERSION)
           .where('course', '==', course)
           .orderBy('score', 'desc')
@@ -739,6 +745,8 @@
         const list2 = [];
         snap2.forEach(doc => {
           const d = doc.data() || {};
+          if (String(d.theme_key || '') !== String(RANKING_THEME_KEY)) return;
+          if (String(d.season || '') !== String(RANKING_SEASON)) return;
           if (Number(d.schema_version) !== Number(RANKING_SCHEMA_VERSION)) return;
           if (String(d.course || '') !== String(course)) return;
           list2.push({
@@ -856,6 +864,8 @@
           .slice(0, 6);
 
         await db.collection(colName).add({
+          theme_key: RANKING_THEME_KEY,
+          season: RANKING_SEASON,
           schema_version: RANKING_SCHEMA_VERSION,
           course,
           score: Number(score || 0),
