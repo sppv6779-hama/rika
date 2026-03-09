@@ -664,6 +664,17 @@
       return 'typing_scores';
     }
 
+    // 旧データ互換：theme_key / season が未保存の過去レコードは
+    // 「現在のテーマ・シーズンのデータ」とみなして表示対象に含める。
+    function isCurrentThemeSeasonRecord(data) {
+      const theme = String((data && data.theme_key) || '').trim();
+      const season = String((data && data.season) || '').trim();
+
+      const themeMatched = (theme === '') || (theme === String(RANKING_THEME_KEY));
+      const seasonMatched = (season === '') || (season === String(RANKING_SEASON));
+      return themeMatched && seasonMatched;
+    }
+
 
     // Firestoreからコース別トップ10を取得
     // 🔧 修正ポイント：orderBy を 2つ使うと「複合インデックスが必要」になり、環境によっては読み取り失敗します。
@@ -692,17 +703,16 @@
       try {
         const snap = await db
           .collection(colName)
-          .where('theme_key', '==', RANKING_THEME_KEY)
-          .where('season', '==', RANKING_SEASON)
           .where('schema_version', '==', RANKING_SCHEMA_VERSION)
           .where('course', '==', course)
           .orderBy('score', 'desc')
-          .limit(50)
+          .limit(200)
           .get();
 
         const list = [];
         snap.forEach(doc => {
           const d = doc.data() || {};
+          if (!isCurrentThemeSeasonRecord(d)) return;
           list.push({
             score: Number(d.score || 0),
             planet_name: d.planet_name || '地球',
@@ -745,8 +755,7 @@
         const list2 = [];
         snap2.forEach(doc => {
           const d = doc.data() || {};
-          if (String(d.theme_key || '') !== String(RANKING_THEME_KEY)) return;
-          if (String(d.season || '') !== String(RANKING_SEASON)) return;
+          if (!isCurrentThemeSeasonRecord(d)) return;
           if (Number(d.schema_version) !== Number(RANKING_SCHEMA_VERSION)) return;
           if (String(d.course || '') !== String(course)) return;
           list2.push({
