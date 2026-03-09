@@ -613,7 +613,11 @@
     let pendingScore = null;
 
     // ===== Firebase / Firestore =====
-    // ※「論理リセット」用：この数値を変更すると、過去のランキングを無視して新しいランキングとして扱います。
+    // ランキング保存先のテーマキー（宇宙旅行版）
+    const RANKING_THEME_KEY = 'space_tour';
+    // シーズン識別子（ここを書き換えるだけで新シーズンへ切替）
+    const RANKING_SEASON = 'season_1';
+    // ※「論理リセット」用：この数値を変更すると、同一シーズン内でも過去ランキングを無視します。
     const RANKING_SCHEMA_VERSION = 1;
 
     const firebaseConfig = {
@@ -660,6 +664,17 @@
       return 'typing_scores';
     }
 
+    // 旧データ互換：theme_key / season が未保存の過去レコードは
+    // 「現在のテーマ・シーズンのデータ」とみなして表示対象に含める。
+    function isCurrentThemeSeasonRecord(data) {
+      const theme = String((data && data.theme_key) || '').trim();
+      const season = String((data && data.season) || '').trim();
+
+      const themeMatched = (theme === '') || (theme === String(RANKING_THEME_KEY));
+      const seasonMatched = (season === '') || (season === String(RANKING_SEASON));
+      return themeMatched && seasonMatched;
+    }
+
 
     // Firestoreからコース別トップ10を取得
     // 🔧 修正ポイント：orderBy を 2つ使うと「複合インデックスが必要」になり、環境によっては読み取り失敗します。
@@ -691,12 +706,13 @@
           .where('schema_version', '==', RANKING_SCHEMA_VERSION)
           .where('course', '==', course)
           .orderBy('score', 'desc')
-          .limit(50)
+          .limit(200)
           .get();
 
         const list = [];
         snap.forEach(doc => {
           const d = doc.data() || {};
+          if (!isCurrentThemeSeasonRecord(d)) return;
           list.push({
             score: Number(d.score || 0),
             planet_name: d.planet_name || '地球',
@@ -739,6 +755,7 @@
         const list2 = [];
         snap2.forEach(doc => {
           const d = doc.data() || {};
+          if (!isCurrentThemeSeasonRecord(d)) return;
           if (Number(d.schema_version) !== Number(RANKING_SCHEMA_VERSION)) return;
           if (String(d.course || '') !== String(course)) return;
           list2.push({
@@ -856,6 +873,8 @@
           .slice(0, 6);
 
         await db.collection(colName).add({
+          theme_key: RANKING_THEME_KEY,
+          season: RANKING_SEASON,
           schema_version: RANKING_SCHEMA_VERSION,
           course,
           score: Number(score || 0),
