@@ -183,28 +183,7 @@
      <h2 class="font-game text-4xl md:text-5xl font-black tracking-wider mb-4" style="color: #00ffff; text-shadow: 0 0 40px rgba(0, 255, 255, 0.8);">コース選択</h2>
      <p class="font-jp text-gray-300 text-lg">挑戦するコースを選んでください</p>
     </div>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-      <button class="course-btn p-8 rounded-2xl font-bold transition-all duration-300 hover:scale-105" data-course="creature" style="background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%); box-shadow: 0 0 30px rgba(46, 204, 113, 0.4);">
-        <div class="text-5xl mb-3">🌱</div>
-        <div class="font-jp text-2xl mb-2" style="color: white;">いきものコース</div>
-        <div class="font-jp text-sm" style="color: rgba(255, 255, 255, 0.8);">植物・動物の問題</div>
-      </button>
-      <button class="course-btn p-8 rounded-2xl font-bold transition-all duration-300 hover:scale-105" data-course="matter" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); box-shadow: 0 0 30px rgba(231, 76, 60, 0.4);">
-        <div class="text-5xl mb-3">⚗️</div>
-        <div class="font-jp text-2xl mb-2" style="color: white;">ぶっしつコース</div>
-        <div class="font-jp text-sm" style="color: rgba(255, 255, 255, 0.8);">物質・化学の問題</div>
-      </button>
-      <button class="course-btn p-8 rounded-2xl font-bold transition-all duration-300 hover:scale-105" data-course="physics" style="background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); box-shadow: 0 0 30px rgba(243, 156, 18, 0.4);">
-        <div class="text-5xl mb-3">💡</div>
-        <div class="font-jp text-2xl mb-2" style="color: white;">ひかり・おと・ちからコース</div>
-        <div class="font-jp text-sm" style="color: rgba(255, 255, 255, 0.8);">物理の問題</div>
-      </button>
-      <button class="course-btn p-8 rounded-2xl font-bold transition-all duration-300 hover:scale-105" data-course="earth" style="background: linear-gradient(135deg, #8e44ad 0%, #6c3483 100%); box-shadow: 0 0 30px rgba(142, 68, 173, 0.4);">
-        <div class="text-5xl mb-3">🌋</div>
-        <div class="font-jp text-2xl mb-2" style="color: white;">だいちコース</div>
-        <div class="font-jp text-sm" style="color: rgba(255, 255, 255, 0.8);">地学の問題</div>
-      </button>
-    </div>
+    <div id="course-buttons" class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8"></div>
     <div class="flex flex-col sm:flex-row justify-center gap-4">
      <button id="show-ranking-btn" class="font-jp text-lg px-8 py-3 rounded-xl transition-all duration-300 hover:scale-105" style="background: linear-gradient(135deg, rgba(255, 215, 0, 0.95) 0%, rgba(255, 165, 0, 0.95) 100%); color: #000428; box-shadow: 0 0 20px rgba(255, 215, 0, 0.35);"> 🏆 ランキングを表示 </button>
      <button id="back-to-start-btn" class="font-jp text-lg px-8 py-3 rounded-xl transition-all duration-300 hover:scale-105" style="background: rgba(255, 255, 255, 0.1); color: white; border: 2px solid rgba(255, 255, 255, 0.3);"> ← もどる </button>
@@ -218,12 +197,7 @@
      <p class="font-jp text-gray-300 text-lg">挑戦前にコース別トップ10を確認できます</p>
     </div>
     <div class="rounded-3xl p-6 md:p-8" style="background: rgba(0, 0, 0, 0.55); border: 2px solid rgba(255, 215, 0, 0.35); box-shadow: 0 0 30px rgba(255, 215, 0, 0.15);">
-     <div id="ranking-course-tabs" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-      <button class="ranking-tab-btn font-jp px-4 py-3 rounded-xl transition-all duration-300 hover:scale-105" data-course="creature" style="background: rgba(46, 204, 113, 0.18); color: white; border: 2px solid rgba(46, 204, 113, 0.4);">🌱 いきもの</button>
-      <button class="ranking-tab-btn font-jp px-4 py-3 rounded-xl transition-all duration-300 hover:scale-105" data-course="matter" style="background: rgba(231, 76, 60, 0.18); color: white; border: 2px solid rgba(231, 76, 60, 0.4);">⚗️ ぶっしつ</button>
-      <button class="ranking-tab-btn font-jp px-4 py-3 rounded-xl transition-all duration-300 hover:scale-105" data-course="physics" style="background: rgba(243, 156, 18, 0.18); color: white; border: 2px solid rgba(243, 156, 18, 0.4);">💡 ひかり・おと・ちから</button>
-      <button class="ranking-tab-btn font-jp px-4 py-3 rounded-xl transition-all duration-300 hover:scale-105" data-course="earth" style="background: rgba(142, 68, 173, 0.18); color: white; border: 2px solid rgba(142, 68, 173, 0.4);">🌋 だいち</button>
-     </div>
+     <div id="ranking-course-tabs" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6"></div>
      <div class="font-jp text-lg mb-4" style="color: #ffd700;">🏆 <span id="ranking-course-title">いきものコース</span> トップ10</div>
      <div id="ranking-list" class="font-jp text-sm space-y-2 text-left"></div>
     </div>
@@ -631,33 +605,91 @@
       selectedCourse: null
     };
 
+    const GAME_VARIANT = {
+      variant_id: 'space_tour_v1',
+      ranking_collection: 'typing_scores',
+      ranking_theme_key: 'space_tour',
+      ranking_theme_label: '宇宙タイピングクエスト',
+      ranking_season: 'season_1',
+      ranking_schema_version: 1,
+      courses: [
+        {
+          id: 'creature',
+          short_label: 'いきもの',
+          full_label: 'いきものコース',
+          description: '植物・動物の問題',
+          icon: '🌱',
+          color: '#2ecc71',
+          gradient_end: '#27ae60',
+          glow: 'rgba(46, 204, 113, 0.35)'
+        },
+        {
+          id: 'matter',
+          short_label: 'ぶっしつ',
+          full_label: 'ぶっしつコース',
+          description: '物質・化学の問題',
+          icon: '⚗️',
+          color: '#e74c3c',
+          gradient_end: '#c0392b',
+          glow: 'rgba(231, 76, 60, 0.35)'
+        },
+        {
+          id: 'physics',
+          short_label: 'ひかり・おと・ちから',
+          full_label: 'ひかり・おと・ちからコース',
+          description: '物理の問題',
+          icon: '💡',
+          color: '#f39c12',
+          gradient_end: '#e67e22',
+          glow: 'rgba(243, 156, 18, 0.35)'
+        },
+        {
+          id: 'earth',
+          short_label: 'だいち',
+          full_label: 'だいちコース',
+          description: '地学の問題',
+          icon: '🌋',
+          color: '#8e44ad',
+          gradient_end: '#6c3483',
+          glow: 'rgba(142, 68, 173, 0.35)'
+        }
+      ]
+    };
+
+    function getAvailableCourses() {
+      return Array.isArray(GAME_VARIANT.courses) ? GAME_VARIANT.courses : [];
+    }
+
+    function getDefaultCourseId() {
+      const firstCourse = getAvailableCourses()[0];
+      return firstCourse ? firstCourse.id : null;
+    }
+
+    function getCourseConfig(courseId) {
+      return getAvailableCourses().find((course) => course.id === courseId) || null;
+    }
+
+    function getCourseLabel(courseId) {
+      const course = getCourseConfig(courseId);
+      return course ? course.full_label : 'コース';
+    }
+
+    function getCourseTheme(courseId) {
+      const course = getCourseConfig(courseId);
+      return course ? { color: course.color, glow: course.glow } : { color: '#00ffff', glow: 'rgba(0, 255, 255, 0.35)' };
+    }
+
+    function createEmptyScoreHistory() {
+      return Object.fromEntries(getAvailableCourses().map((course) => [course.id, []]));
+    }
+
     // スコア履歴（コース別）
-    let scoreHistory = { creature: [], matter: [], physics: [], earth: [] };
+    let scoreHistory = createEmptyScoreHistory();
     let isTop10 = false;
     let pendingScore = null;
-    let rankingScreenSelectedCourse = 'creature';
-
-    const courseLabels = {
-      creature: 'いきものコース',
-      matter: 'ぶっしつコース',
-      physics: 'ひかり・おと・ちからコース',
-      earth: 'だいちコース'
-    };
-
-    const courseThemeStyles = {
-      creature: { color: '#2ecc71', glow: 'rgba(46, 204, 113, 0.35)' },
-      matter: { color: '#e74c3c', glow: 'rgba(231, 76, 60, 0.35)' },
-      physics: { color: '#f39c12', glow: 'rgba(243, 156, 18, 0.35)' },
-      earth: { color: '#8e44ad', glow: 'rgba(142, 68, 173, 0.35)' }
-    };
+    let rankingScreenSelectedCourse = getDefaultCourseId();
 
     // ===== Firebase / Firestore =====
-    // ランキング保存先のテーマキー（宇宙旅行版）
-    const RANKING_THEME_KEY = 'space_tour';
-    // シーズン識別子（ここを書き換えるだけで新シーズンへ切替）
-    const RANKING_SEASON = 'season_1';
-    // ※「論理リセット」用：この数値を変更すると、同一シーズン内でも過去ランキングを無視します。
-    const RANKING_SCHEMA_VERSION = 1;
 
     const firebaseConfig = {
       apiKey: "AIzaSyAs-mANaQsq-yY7UL3yQTDIVjgmLAsescQ",
@@ -700,7 +732,7 @@
     // 重要：あなたのFirestoreルールは /typing_scores/{document} にのみ許可があります。
     // そのため、コード側も必ず typing_scores を使います。
     function getRankingCollectionName() {
-      return 'typing_scores';
+      return GAME_VARIANT.ranking_collection || 'typing_scores';
     }
 
     // 旧データ互換：theme_key / season が未保存の過去レコードは
@@ -709,9 +741,11 @@
       const theme = String((data && data.theme_key) || '').trim();
       const season = String((data && data.season) || '').trim();
 
-      const themeMatched = (theme === '') || (theme === String(RANKING_THEME_KEY));
-      const seasonMatched = (season === '') || (season === String(RANKING_SEASON));
-      return themeMatched && seasonMatched;
+      const variantId = String((data && data.variant_id) || '').trim();
+      const themeMatched = (theme === '') || (theme === String(GAME_VARIANT.ranking_theme_key));
+      const seasonMatched = (season === '') || (season === String(GAME_VARIANT.ranking_season));
+      const variantMatched = (variantId === '') || (variantId === String(GAME_VARIANT.variant_id));
+      return themeMatched && seasonMatched && variantMatched;
     }
 
 
@@ -742,7 +776,7 @@
       try {
         const snap = await db
           .collection(colName)
-          .where('schema_version', '==', RANKING_SCHEMA_VERSION)
+          .where('schema_version', '==', GAME_VARIANT.ranking_schema_version)
           .where('course', '==', course)
           .orderBy('score', 'desc')
           .limit(200)
@@ -795,7 +829,7 @@
         snap2.forEach(doc => {
           const d = doc.data() || {};
           if (!isCurrentThemeSeasonRecord(d)) return;
-          if (Number(d.schema_version) !== Number(RANKING_SCHEMA_VERSION)) return;
+          if (Number(d.schema_version) !== Number(GAME_VARIANT.ranking_schema_version)) return;
           if (String(d.course || '') !== String(course)) return;
           list2.push({
             score: Number(d.score || 0),
@@ -850,8 +884,7 @@
     }
 
     async function loadAllTopScores() {
-      const courses = ['creature', 'matter', 'physics', 'earth'];
-      for (const c of courses) {
+      for (const { id: c } of getAvailableCourses()) {
         await loadTopScores(c);
       }
     }
@@ -862,7 +895,7 @@
         return `<div class="text-center text-gray-500">${emptyMessage}</div>`;
       }
 
-      const theme = courseThemeStyles[course] || { color: '#00ffff', glow: 'rgba(0, 255, 255, 0.35)' };
+      const theme = getCourseTheme(course);
       const top10 = courseScores.slice(0, 10);
       return top10.map((record, index) => {
         const medals = ['🥇', '🥈', '🥉'];
@@ -892,12 +925,12 @@
       const rankingCourseTitleEl = document.getElementById('ranking-course-title');
       if (!rankingListEl || !rankingCourseTitleEl) return;
 
-      rankingCourseTitleEl.textContent = courseLabels[rankingScreenSelectedCourse] || 'コース';
+      rankingCourseTitleEl.textContent = getCourseLabel(rankingScreenSelectedCourse);
       rankingListEl.innerHTML = buildRankingListMarkup(rankingScreenSelectedCourse, 'まだランキングがありません');
 
       document.querySelectorAll('.ranking-tab-btn').forEach((btn) => {
         const course = btn.getAttribute('data-course');
-        const theme = courseThemeStyles[course] || { color: '#00ffff', glow: 'rgba(0, 255, 255, 0.35)' };
+        const theme = getCourseTheme(course);
         const isActive = course === rankingScreenSelectedCourse;
         btn.style.background = isActive ? `linear-gradient(135deg, ${theme.color} 0%, rgba(255,255,255,0.2) 100%)` : `${theme.glow}`;
         btn.style.borderColor = isActive ? theme.color : theme.glow;
@@ -943,9 +976,11 @@
           .slice(0, 6);
 
         await db.collection(colName).add({
-          theme_key: RANKING_THEME_KEY,
-          season: RANKING_SEASON,
-          schema_version: RANKING_SCHEMA_VERSION,
+          variant_id: GAME_VARIANT.variant_id,
+          theme_key: GAME_VARIANT.ranking_theme_key,
+          theme_label: GAME_VARIANT.ranking_theme_label,
+          season: GAME_VARIANT.ranking_season,
+          schema_version: GAME_VARIANT.ranking_schema_version,
           course,
           score: Number(score || 0),
           planet_name: planetName,
@@ -1018,6 +1053,34 @@
     const nicknameInput = document.getElementById('nickname-input');
     const submitNicknameBtn = document.getElementById('submit-nickname-btn');
     const nicknameForm = document.getElementById('nickname-form');
+    const courseButtonsEl = document.getElementById('course-buttons');
+    const rankingCourseTabsEl = document.getElementById('ranking-course-tabs');
+
+    function renderCourseButtons() {
+      if (!courseButtonsEl) return;
+      courseButtonsEl.innerHTML = getAvailableCourses().map((course) => `
+        <button class="course-btn p-8 rounded-2xl font-bold transition-all duration-300 hover:scale-105" data-course="${course.id}" style="background: linear-gradient(135deg, ${course.color} 0%, ${course.gradient_end} 100%); box-shadow: 0 0 30px ${course.glow};">
+          <div class="text-5xl mb-3">${course.icon}</div>
+          <div class="font-jp text-2xl mb-2" style="color: white;">${course.full_label}</div>
+          <div class="font-jp text-sm" style="color: rgba(255, 255, 255, 0.8);">${course.description}</div>
+        </button>
+      `).join('');
+    }
+
+    function renderRankingTabs() {
+      if (!rankingCourseTabsEl) return;
+      rankingCourseTabsEl.innerHTML = getAvailableCourses().map((course) => `
+        <button class="ranking-tab-btn font-jp px-4 py-3 rounded-xl transition-all duration-300 hover:scale-105" data-course="${course.id}" style="background: ${course.glow}; color: white; border: 2px solid ${course.glow};">${course.icon} ${course.short_label}</button>
+      `).join('');
+    }
+
+    function initializeVariantUi() {
+      renderCourseButtons();
+      renderRankingTabs();
+      if (!gameState.selectedCourse) gameState.selectedCourse = getDefaultCourseId();
+      if (!rankingScreenSelectedCourse) rankingScreenSelectedCourse = getDefaultCourseId();
+      updateRankingScreenDisplay();
+    }
 
     function initializeGauge() {
       if (!planetMarkersEl) return;
@@ -1051,18 +1114,20 @@
       courseScreen.classList.remove('hidden');
     });
 
-    document.querySelectorAll('.course-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        gameState.selectedCourse = btn.getAttribute('data-course');
+    if (courseButtonsEl) {
+      courseButtonsEl.addEventListener('click', async (event) => {
+        const btn = event.target.closest('.course-btn');
+        if (!btn) return;
+        gameState.selectedCourse = btn.getAttribute('data-course') || getDefaultCourseId();
         courseScreen.classList.add('hidden');
         rankingScreen.classList.add('hidden');
         await loadTopScores(gameState.selectedCourse);
         startGame();
       });
-    });
+    }
 
     showRankingBtn.addEventListener('click', async () => {
-      rankingScreenSelectedCourse = gameState.selectedCourse || rankingScreenSelectedCourse || 'creature';
+      rankingScreenSelectedCourse = gameState.selectedCourse || rankingScreenSelectedCourse || getDefaultCourseId();
       courseScreen.classList.add('hidden');
       rankingScreen.classList.remove('hidden');
       updateRankingScreenDisplay();
@@ -1070,16 +1135,18 @@
       updateRankingScreenDisplay();
     });
 
-    document.querySelectorAll('.ranking-tab-btn').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        rankingScreenSelectedCourse = btn.getAttribute('data-course') || 'creature';
+    if (rankingCourseTabsEl) {
+      rankingCourseTabsEl.addEventListener('click', async (event) => {
+        const btn = event.target.closest('.ranking-tab-btn');
+        if (!btn) return;
+        rankingScreenSelectedCourse = btn.getAttribute('data-course') || getDefaultCourseId();
         updateRankingScreenDisplay();
         if ((scoreHistory[rankingScreenSelectedCourse] || []).length === 0) {
           await loadTopScores(rankingScreenSelectedCourse);
           updateRankingScreenDisplay();
         }
       });
-    });
+    }
 
     backToStartBtn.addEventListener('click', () => {
       courseScreen.classList.add('hidden');
@@ -1145,7 +1212,8 @@
 
     function nextWord() {
       if (gameState.hintTimer) clearTimeout(gameState.hintTimer);
-      const words = wordsByCourse[gameState.selectedCourse] || wordsByCourse.creature;
+      const defaultCourseId = getDefaultCourseId();
+      const words = wordsByCourse[gameState.selectedCourse] || wordsByCourse[defaultCourseId] || [];
       if (gameState.usedWords.length >= words.length) gameState.usedWords = [];
 
       const availableWords = words.filter((_, index) => !gameState.usedWords.includes(index));
@@ -1579,6 +1647,8 @@
       config = window.elementSdk.config || defaultConfig;
     }
 
+    initializeVariantUi();
+
     // Firebase初期化（順序を保証する）
     (async () => {
       const ok = await initFirebaseAndAuth();
@@ -1678,8 +1748,9 @@
         console.assert(c.length >= 4, 'Test: sokuon split');
 
         // Top10判定
-        gameState.selectedCourse = 'creature';
-        scoreHistory.creature = new Array(10).fill(0).map((_, i) => ({ score: 100 - i }));
+        gameState.selectedCourse = getDefaultCourseId();
+        const selfTestCourse = getDefaultCourseId();
+        scoreHistory[selfTestCourse] = new Array(10).fill(0).map((_, i) => ({ score: 100 - i }));
         console.assert(checkTop10(200) === true, 'Test: score higher than 10th');
         console.assert(checkTop10(0) === false, 'Test: score lower than 10th');
         console.assert(checkTop10(91) === false, 'Test: tie with 10th is NOT top10');
@@ -1692,6 +1763,8 @@
 
         // コレクション名
         console.assert(getRankingCollectionName() === 'typing_scores', 'Test: collection name');
+        console.assert(getDefaultCourseId() === 'creature', 'Test: default course id');
+        console.assert(getCourseConfig('physics').short_label === 'ひかり・おと・ちから', 'Test: course config lookup');
 
         // 促音＋ち：「すけっち」→ sukecchi / suketti
         const sc = convertHiraganaToRomajiArray('すけっち');
