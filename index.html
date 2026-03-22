@@ -709,6 +709,7 @@
           console.error('Firebase init failed:', err);
           db = null;
           firebaseReady = false;
+          firebaseInitPromise = null;
           return false;
         }
       })();
@@ -716,18 +717,73 @@
       return firebaseInitPromise;
     }
 
-    // ✅ Firestoreコレクション名
-    // テーマ＋シーズンごとに保存先を分ける（例: typing_scores_time_travel_season_1）
-    function getRankingCollectionName() {
-      const normalizedTheme = String(RANKING_THEME_KEY || 'default').toLowerCase().replace(/[^a-z0-9_]+/g, '_');
-      const normalizedSeason = String(RANKING_SEASON || 'season_0').toLowerCase().replace(/[^a-z0-9_]+/g, '_');
+    // ✅ Firestoreランキングパス
+    // 旧実装は全コースを単一コレクションに保存し、複合条件 + orderBy(score) で読み込んでいました。
+    // この方式は Firestore の複合インデックス依存が強く、未作成環境では読み込みに失敗します。
+    // 新実装では「テーマ / シーズン / コース」ごとに保存先を分離し、score の単純ソートだけで取得します。
+    function normalizeRankingKeyPart(value, fallback) {
+      return String(value || fallback).toLowerCase().replace(/[^a-z0-9_]+/g, '_');
+    }
+
+    function getLegacyRankingCollectionName() {
+      const normalizedTheme = normalizeRankingKeyPart(RANKING_THEME_KEY, 'default');
+      const normalizedSeason = normalizeRankingKeyPart(RANKING_SEASON, 'season_0');
       return `typing_scores_${normalizedTheme}_${normalizedSeason}`;
     }
 
+    function getRankingSeasonDocumentId() {
+      const normalizedTheme = normalizeRankingKeyPart(RANKING_THEME_KEY, 'default');
+      const normalizedSeason = normalizeRankingKeyPart(RANKING_SEASON, 'season_0');
+      return `${normalizedTheme}__${normalizedSeason}`;
+    }
+
+    function getRankingEntriesCollection(course) {
+      if (!db || !course) return null;
+      return db
+        .collection('typing_rankings')
+        .doc(getRankingSeasonDocumentId())
+        .collection('courses')
+        .doc(String(course))
+        .collection('entries');
+    }
+
+    function getRecordTimestampValue(record) {
+      if (!record) return '';
+      const raw = record.created_at || record.timestamp || '';
+      if (raw && typeof raw.toMillis === 'function') return raw.toMillis();
+      if (raw instanceof Date) return raw.getTime();
+      const parsed = Date.parse(String(raw));
+      return Number.isNaN(parsed) ? String(raw || '') : parsed;
+    }
+
+    function sortRankingRecords(records) {
+      records.sort((a, b) => {
+        const ds = (Number(b.score || 0) - Number(a.score || 0));
+        if (ds !== 0) return ds;
+        const ta = getRecordTimestampValue(a);
+        const tb = getRecordTimestampValue(b);
+        if (tb > ta) return 1;
+        if (tb < ta) return -1;
+        return 0;
+      });
+      return records;
+    }
+
+    function mapRankingDoc(doc, course) {
+      const d = doc.data() || {};
+      return {
+        id: doc.id,
+        score: Number(d.score || 0),
+        planet_name: d.planet_name || '縄文時代',
+        planet_emoji: d.planet_emoji || '🏺',
+        course: d.course || course,
+        nickname: d.nickname || '名無し',
+        timestamp: d.timestamp || '',
+        created_at: d.created_at || null
+      };
+    }
 
     // Firestoreからコース別トップ10を取得
-    // 🔧 修正ポイント：orderBy を 2つ使うと「複合インデックスが必要」になり、環境によっては読み取り失敗します。
-    // → orderBy(score) の1つだけにして、同点の並び順（timestamp）だけクライアントで整列します。
     async function loadTopScores(course) {
       let waitCount = 0;
       while (!firebaseReady && waitCount < 50) {
@@ -744,95 +800,53 @@
         return;
       }
 
-      const colName = getRankingCollectionName();
+      const rankingEntries = getRankingEntriesCollection(course);
+      const legacyColName = getLegacyRankingCollectionName();
 
-      // まずは「コース + schema_version + score」で絞り込む（最小読み取り）
-      // ただし環境によっては複合インデックス未作成で失敗することがあるため、
-      // 失敗したらフォールバック（score順だけで多めに取り、クライアントで絞り込み）を行う。
+      // 新実装: コース別サブコレクションを score のみで取得（複合インデックス不要）
       try {
-        const snap = await db
-          .collection(colName)
-          .where('schema_version', '==', RANKING_SCHEMA_VERSION)
-          .where('ranking_theme', '==', RANKING_THEME_KEY)
-          .where('ranking_season', '==', RANKING_SEASON)
-          .where('course', '==', course)
+        if (!rankingEntries) throw new Error('Ranking collection is not available.');
+
+        const snap = await rankingEntries
           .orderBy('score', 'desc')
           .limit(50)
           .get();
 
         const list = [];
         snap.forEach(doc => {
-          const d = doc.data() || {};
-          list.push({
-            score: Number(d.score || 0),
-            planet_name: d.planet_name || '縄文時代',
-            planet_emoji: d.planet_emoji || '🏺',
-            course,
-            nickname: d.nickname || '名無し',
-            timestamp: (d.timestamp || '')
-          });
+          const data = doc.data() || {};
+          if (Number(data.schema_version) !== Number(RANKING_SCHEMA_VERSION)) return;
+          list.push(mapRankingDoc(doc, course));
         });
-
-        // score desc, timestamp desc（同点は新しい方を上）
-        list.sort((a, b) => {
-          const ds = (b.score - a.score);
-          if (ds !== 0) return ds;
-          const ta = String(a.timestamp || '');
-          const tb = String(b.timestamp || '');
-          if (tb > ta) return 1;
-          if (tb < ta) return -1;
-          return 0;
-        });
-
-        scoreHistory[course] = list.slice(0, 10);
+        scoreHistory[course] = sortRankingRecords(list).slice(0, 10);
         updateBestScoresDisplay();
         return;
       } catch (err) {
-        // よくある原因：複合インデックス未作成（FAILED_PRECONDITION）
-        // ただし、環境によっては permission-denied っぽく見えることもあるためフォールバック
-        console.warn('Primary ranking query failed, trying fallback query:', err);
+        console.warn('Course ranking query failed, trying legacy fallback query:', err);
       }
 
-      // フォールバック：score のみで上位を多めに読み、クライアントで course と schema_version を絞る
-      // ※ 読み取りは誰でもOKなルールの場合に動きます。
+      // 旧実装フォールバック: 単一コレクションから読み込んで移行前データも表示する
       try {
         const snap2 = await db
-          .collection(colName)
+          .collection(legacyColName)
           .orderBy('score', 'desc')
           .limit(500)
           .get();
 
         const list2 = [];
         snap2.forEach(doc => {
-          const d = doc.data() || {};
-          if (Number(d.schema_version) !== Number(RANKING_SCHEMA_VERSION)) return;
-          if (String(d.ranking_theme || '') !== String(RANKING_THEME_KEY)) return;
-          if (String(d.ranking_season || '') !== String(RANKING_SEASON)) return;
-          if (String(d.course || '') !== String(course)) return;
-          list2.push({
-            score: Number(d.score || 0),
-            planet_name: d.planet_name || '縄文時代',
-            planet_emoji: d.planet_emoji || '🏺',
-            course,
-            nickname: d.nickname || '名無し',
-            timestamp: (d.timestamp || '')
-          });
+          const record = mapRankingDoc(doc, course);
+          if (Number((doc.data() || {}).schema_version) !== Number(RANKING_SCHEMA_VERSION)) return;
+          if (String((doc.data() || {}).ranking_theme || '') !== String(RANKING_THEME_KEY)) return;
+          if (String((doc.data() || {}).ranking_season || '') !== String(RANKING_SEASON)) return;
+          if (String(record.course || '') !== String(course)) return;
+          list2.push(record);
         });
 
-        list2.sort((a, b) => {
-          const ds = (b.score - a.score);
-          if (ds !== 0) return ds;
-          const ta = String(a.timestamp || '');
-          const tb = String(b.timestamp || '');
-          if (tb > ta) return 1;
-          if (tb < ta) return -1;
-          return 0;
-        });
-
-        scoreHistory[course] = list2.slice(0, 10);
+        scoreHistory[course] = sortRankingRecords(list2).slice(0, 10);
         updateBestScoresDisplay();
       } catch (err2) {
-        console.error('Failed to load scores (fallback also failed):', err2);
+        console.error('Failed to load scores (legacy fallback also failed):', err2);
         scoreHistory[course] = [];
         updateBestScoresDisplayWithError(course, err2);
       }
@@ -932,14 +946,15 @@
         }
 
         const course = gameState.selectedCourse;
-        const colName = getRankingCollectionName();
+        const rankingEntries = getRankingEntriesCollection(course);
+        if (!rankingEntries) throw new Error('Ranking collection is not available.');
 
         // ニックネーム：改行・タブ・スペースを除去して6文字まで
         const safeNickname = (nickname && nickname.length ? nickname : '名無し')
           .replace(/[ \r\n\t]+/g, '')
           .slice(0, 6);
 
-        await db.collection(colName).add({
+        await rankingEntries.add({
           schema_version: RANKING_SCHEMA_VERSION,
           ranking_theme: RANKING_THEME_KEY,
           ranking_season: RANKING_SEASON,
@@ -948,7 +963,8 @@
           planet_name: planetName,
           planet_emoji: planetEmoji,
           nickname: safeNickname,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          created_at: firebase.firestore.FieldValue.serverTimestamp()
         });
 
         await loadTopScores(course);
@@ -1655,8 +1671,9 @@
         const out = s.replace(/[ \r\n\t]+/g, '');
         console.assert(out === 'ABCD', 'Test: nickname sanitize regex');
 
-        // コレクション名
-        console.assert(getRankingCollectionName() === 'typing_scores_time_travel_season_1', 'Test: collection name');
+        // ランキング保存先パス
+        console.assert(getLegacyRankingCollectionName() === 'typing_scores_time_travel_season_1', 'Test: legacy collection name');
+        console.assert(getRankingSeasonDocumentId() === 'time_travel__season_1', 'Test: season document id');
 
         // 促音＋ち：「すけっち」→ sukecchi / suketti
         const sc = convertHiraganaToRomajiArray('すけっち');
