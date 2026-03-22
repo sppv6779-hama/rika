@@ -677,6 +677,68 @@
     let firebaseInitPromise = null;
     let firebaseAuthReady = false;
 
+    function getLocalRankingStorageKey() {
+      return `${getRankingCollectionName()}_local_v${RANKING_SCHEMA_VERSION}`;
+    }
+
+    function readLocalRankingStore() {
+      try {
+        const raw = window.localStorage ? window.localStorage.getItem(getLocalRankingStorageKey()) : null;
+        if (!raw) return { kagaku: [], ikimono: [], tenki: [], denki: [] };
+        const parsed = JSON.parse(raw);
+        return {
+          kagaku: Array.isArray(parsed.kagaku) ? parsed.kagaku : [],
+          ikimono: Array.isArray(parsed.ikimono) ? parsed.ikimono : [],
+          tenki: Array.isArray(parsed.tenki) ? parsed.tenki : [],
+          denki: Array.isArray(parsed.denki) ? parsed.denki : []
+        };
+      } catch (err) {
+        console.warn('Failed to read local ranking cache:', err);
+        return { kagaku: [], ikimono: [], tenki: [], denki: [] };
+      }
+    }
+
+    function writeLocalRankingStore(store) {
+      try {
+        if (!window.localStorage) return;
+        window.localStorage.setItem(getLocalRankingStorageKey(), JSON.stringify(store));
+      } catch (err) {
+        console.warn('Failed to write local ranking cache:', err);
+      }
+    }
+
+    function sortRankingList(list) {
+      list.sort((a, b) => {
+        const ds = (Number(b.score || 0) - Number(a.score || 0));
+        if (ds !== 0) return ds;
+        const ta = String(a.timestamp || '');
+        const tb = String(b.timestamp || '');
+        if (tb > ta) return 1;
+        if (tb < ta) return -1;
+        return 0;
+      });
+      return list;
+    }
+
+    function saveScoreToLocalCache(record) {
+      if (!record || !record.course) return [];
+      const store = readLocalRankingStore();
+      const course = String(record.course);
+      const courseList = Array.isArray(store[course]) ? [...store[course]] : [];
+      courseList.push(record);
+      store[course] = sortRankingList(courseList).slice(0, 10);
+      writeLocalRankingStore(store);
+      return store[course];
+    }
+
+    function loadScoresFromLocalCache(course) {
+      const store = readLocalRankingStore();
+      const list = Array.isArray(store[course]) ? store[course] : [];
+      scoreHistory[course] = sortRankingList([...list]).slice(0, 10);
+      updateBestScoresDisplay();
+      return scoreHistory[course];
+    }
+
     async function initFirebaseAndAuth() {
       if (firebaseInitPromise) return firebaseInitPromise;
 
@@ -709,6 +771,7 @@
           console.error('Firebase init failed:', err);
           db = null;
           firebaseReady = false;
+          firebaseInitPromise = null;
           return false;
         }
       })();
@@ -729,18 +792,22 @@
     // 🔧 修正ポイント：orderBy を 2つ使うと「複合インデックスが必要」になり、環境によっては読み取り失敗します。
     // → orderBy(score) の1つだけにして、同点の並び順（timestamp）だけクライアントで整列します。
     async function loadTopScores(course) {
+      if (!course) return;
+
+      if (!firebaseReady && !firebaseInitPromise) {
+        await initFirebaseAndAuth();
+      }
+
       let waitCount = 0;
-      while (!firebaseReady && waitCount < 50) {
+      while (!firebaseReady && firebaseInitPromise && waitCount < 50) {
         await new Promise(r => setTimeout(r, 100));
         waitCount++;
       }
-      if (!course) return;
 
       if (!db) {
-        const err = new Error('Firestore is not initialized (db is null). Check auth/rules/network.');
-        console.error('Failed to load scores:', err);
-        scoreHistory[course] = [];
-        updateBestScoresDisplayWithError(course, err);
+        const err = new Error('Firestore is not initialized (db is null). Falling back to local ranking cache.');
+        console.warn('Failed to load scores from Firestore:', err);
+        loadScoresFromLocalCache(course);
         return;
       }
 
@@ -773,18 +840,7 @@
           });
         });
 
-        // score desc, timestamp desc（同点は新しい方を上）
-        list.sort((a, b) => {
-          const ds = (b.score - a.score);
-          if (ds !== 0) return ds;
-          const ta = String(a.timestamp || '');
-          const tb = String(b.timestamp || '');
-          if (tb > ta) return 1;
-          if (tb < ta) return -1;
-          return 0;
-        });
-
-        scoreHistory[course] = list.slice(0, 10);
+        scoreHistory[course] = sortRankingList(list).slice(0, 10);
         updateBestScoresDisplay();
         return;
       } catch (err) {
@@ -819,22 +875,11 @@
           });
         });
 
-        list2.sort((a, b) => {
-          const ds = (b.score - a.score);
-          if (ds !== 0) return ds;
-          const ta = String(a.timestamp || '');
-          const tb = String(b.timestamp || '');
-          if (tb > ta) return 1;
-          if (tb < ta) return -1;
-          return 0;
-        });
-
-        scoreHistory[course] = list2.slice(0, 10);
+        scoreHistory[course] = sortRankingList(list2).slice(0, 10);
         updateBestScoresDisplay();
       } catch (err2) {
         console.error('Failed to load scores (fallback also failed):', err2);
-        scoreHistory[course] = [];
-        updateBestScoresDisplayWithError(course, err2);
+        loadScoresFromLocalCache(course);
       }
     }
 
@@ -918,11 +963,26 @@
         submitBtn.textContent = '登録中...';
       }
 
+      const course = gameState.selectedCourse;
+      const safeNickname = (nickname && nickname.length ? nickname : '名無し')
+        .replace(/[ \r\n\t]+/g, '')
+        .slice(0, 6);
+      const record = {
+        score: Number(score || 0),
+        planet_name: planetName,
+        planet_emoji: planetEmoji,
+        course,
+        nickname: safeNickname,
+        timestamp: new Date().toISOString()
+      };
+
+      let savedRemotely = false;
+
       try {
         if (!firebaseReady || !db) {
           await initFirebaseAndAuth();
         }
-        if (!db) throw new Error('Firestore is not initialized (db is null). Cannot save.');
+        if (!db) throw new Error('Firestore is not initialized (db is null). Cannot save remotely.');
 
         const authed = await ensureWriteAuth();
         if (!authed) {
@@ -931,43 +991,26 @@
             : '匿名ログインに失敗したため、ランキング保存ができませんでした。');
         }
 
-        const course = gameState.selectedCourse;
         const colName = getRankingCollectionName();
-
-        // ニックネーム：改行・タブ・スペースを除去して6文字まで
-        const safeNickname = (nickname && nickname.length ? nickname : '名無し')
-          .replace(/[ \r\n\t]+/g, '')
-          .slice(0, 6);
 
         await db.collection(colName).add({
           schema_version: RANKING_SCHEMA_VERSION,
           ranking_theme: RANKING_THEME_KEY,
           ranking_season: RANKING_SEASON,
-          course,
-          score: Number(score || 0),
-          planet_name: planetName,
-          planet_emoji: planetEmoji,
-          nickname: safeNickname,
-          timestamp: new Date().toISOString()
+          ...record
         });
-
-        await loadTopScores(course);
+        savedRemotely = true;
+      } catch (err) {
+        console.error('Failed to save score remotely, falling back to local cache:', err);
+        scoreHistory[course] = saveScoreToLocalCache(record);
+        updateBestScoresDisplay();
+      } finally {
+        if (savedRemotely) {
+          await loadTopScores(course);
+        }
 
         const nicknameForm = document.getElementById('nickname-form');
         if (nicknameForm) nicknameForm.classList.add('hidden');
-      } catch (err) {
-        console.error('Failed to save score:', err);
-        const bestScoresListEl = document.getElementById('best-scores-list');
-        if (bestScoresListEl) {
-          const msg = (err && err.message) ? String(err.message) : '保存に失敗しました';
-          bestScoresListEl.innerHTML = `
-            <div class="text-center text-gray-400">
-              ランキング保存に失敗しました<br>
-              <span class="text-xs" style="color: rgba(255,255,255,0.6);">${msg}</span>
-            </div>
-          `;
-        }
-      } finally {
         if (submitBtn) {
           submitBtn.disabled = false;
           submitBtn.textContent = '登録';
@@ -1657,6 +1700,24 @@
 
         // コレクション名
         console.assert(getRankingCollectionName() === 'typing_scores_time_travel_season_1', 'Test: collection name');
+
+
+        // ローカルランキングキャッシュ
+        const previousStorage = window.localStorage.getItem(getLocalRankingStorageKey());
+        window.localStorage.removeItem(getLocalRankingStorageKey());
+        const cached = saveScoreToLocalCache({
+          course: 'ikimono',
+          score: 321,
+          planet_name: '江戸時代',
+          planet_emoji: '🏯',
+          nickname: 'TEST',
+          timestamp: '2026-01-01T00:00:00.000Z'
+        });
+        console.assert(Array.isArray(cached) && cached[0].score === 321, 'Test: local ranking cache save');
+        const cachedLoaded = loadScoresFromLocalCache('ikimono');
+        console.assert(Array.isArray(cachedLoaded) && cachedLoaded[0].nickname === 'TEST', 'Test: local ranking cache load');
+        if (previousStorage === null) window.localStorage.removeItem(getLocalRankingStorageKey());
+        else window.localStorage.setItem(getLocalRankingStorageKey(), previousStorage);
 
         // 促音＋ち：「すけっち」→ sukecchi / suketti
         const sc = convertHiraganaToRomajiArray('すけっち');
