@@ -3,7 +3,7 @@
  <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>中１宇宙タイピングクエスト</title>
+  <title>中１世界一周タイピングツアー</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="/_sdk/element_sdk.js"></script>
   <script src="/_sdk/data_sdk.js"></script>
@@ -14,16 +14,16 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
 
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&amp;family=Noto+Sans+JP:wght@400;500;700&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&amp;family=Noto+Sans+JP:wght@400;500;700&amp;display=swap" rel="stylesheet">
   <style>
     body { box-sizing: border-box; }
 
-    .font-game { font-family: 'Orbitron', 'Noto Sans JP', sans-serif; }
+    .font-game { font-family: 'Baloo 2', 'Noto Sans JP', sans-serif; }
     .font-jp { font-family: 'Noto Sans JP', sans-serif; }
 
     @keyframes float {
       0%, 100% { transform: translateY(0) rotate(0deg); }
-      50% { transform: translateY(-15px) rotate(5deg); }
+      50% { transform: translateY(-15px) rotate(3deg); }
     }
 
     @keyframes shake {
@@ -34,19 +34,24 @@
 
     @keyframes explosion {
       0% { transform: scale(1) rotate(0deg); opacity: 1; }
-      50% { transform: scale(1.5) rotate(180deg); opacity: 0.5; }
-      100% { transform: scale(2) rotate(360deg); opacity: 0; }
+      50% { transform: scale(1.08) rotate(-3deg); opacity: 0.8; }
+      100% { transform: scale(0.95) rotate(3deg); opacity: 0; }
     }
 
     @keyframes ship-move-forward {
-      0% { transform: translateY(0) scale(1); }
-      50% { transform: translateY(-30px) scale(1.2); }
-      100% { transform: translateY(0) scale(1); }
+      0% { transform: translateY(0) translateX(0) scale(1) rotate(0deg); }
+      50% { transform: translateY(-24px) translateX(10px) scale(1.12) rotate(6deg); }
+      100% { transform: translateY(0) translateX(0) scale(1) rotate(0deg); }
     }
 
-    @keyframes stars-move {
-      0% { transform: translateY(0); }
-      100% { transform: translateY(100%); }
+    @keyframes route-drift {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-120px); }
+    }
+
+    @keyframes cloud-float {
+      0%, 100% { transform: translateY(0); opacity: 0.35; }
+      50% { transform: translateY(-12px); opacity: 0.6; }
     }
 
     @keyframes fadeIn {
@@ -54,36 +59,31 @@
       100% { opacity: 1; transform: translateY(0); }
     }
 
-    @keyframes planet-arrive {
-      0% { transform: scale(0) rotate(0deg); opacity: 0; }
-      60% { transform: scale(1.2) rotate(180deg); opacity: 1; }
-      100% { transform: scale(1) rotate(360deg); opacity: 1; }
+    @keyframes stamp-arrive {
+      0% { transform: scale(0) rotate(-18deg); opacity: 0; }
+      65% { transform: scale(1.18) rotate(8deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
     }
 
-    @keyframes rocket-flight {
+    @keyframes plane-flight {
       0% {
         bottom: 0%;
         left: 50%;
-        transform: translateX(-50%) scale(1) rotate(0deg);
+        transform: translateX(-50%) scale(1) rotate(-8deg);
         opacity: 1;
       }
       100% {
         bottom: var(--flight-end);
         left: 50%;
-        transform: translateX(-50%) scale(1.5) rotate(15deg);
+        transform: translateX(-50%) scale(1.32) rotate(6deg);
         opacity: 1;
       }
     }
 
-    @keyframes planet-pass {
+    @keyframes stop-pass {
       0% { opacity: 0; transform: scale(0.5); }
-      50% { opacity: 1; transform: scale(1.2); }
-      100% { opacity: 0.3; transform: scale(1); }
-    }
-
-    @keyframes stars-twinkle {
-      0%, 100% { opacity: 0.3; }
-      50% { opacity: 1; }
+      50% { opacity: 1; transform: scale(1.15); }
+      100% { opacity: 0.35; transform: scale(1); }
     }
 
     .animate-float { animation: float 3s ease-in-out infinite; }
@@ -91,51 +91,50 @@
     .animate-explosion { animation: explosion 0.5s ease-out forwards; }
     .animate-ship-move { animation: ship-move-forward 0.5s ease-out; }
     .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
-    .animate-planet-arrive { animation: planet-arrive 1s ease-out; }
+    .animate-planet-arrive { animation: stamp-arrive 1s ease-out; }
 
-    .stars-bg { position: relative; overflow: hidden; }
+    .travel-bg { position: relative; overflow: hidden; }
 
-    .stars-bg::before {
+    .travel-bg::before {
       content: '';
       position: absolute;
-      width: 200%;
-      height: 200%;
+      inset: -10%;
       background-image:
-        radial-gradient(2px 2px at 20% 30%, white, transparent),
-        radial-gradient(2px 2px at 60% 70%, white, transparent),
-        radial-gradient(1px 1px at 50% 50%, white, transparent),
-        radial-gradient(1px 1px at 80% 10%, white, transparent),
-        radial-gradient(2px 2px at 90% 60%, white, transparent),
-        radial-gradient(1px 1px at 33% 80%, white, transparent),
-        radial-gradient(1px 1px at 15% 90%, white, transparent);
-      background-size: 200px 200px;
-      background-position: 0 0, 40px 60px, 130px 270px, 70px 100px, 150px 50px, 90px 180px, 30px 220px;
-      animation: stars-move 20s linear infinite;
+        radial-gradient(circle at 15% 20%, rgba(255,255,255,0.8) 0 3px, transparent 4px),
+        radial-gradient(circle at 78% 28%, rgba(255,255,255,0.8) 0 3px, transparent 4px),
+        radial-gradient(circle at 55% 72%, rgba(255,255,255,0.7) 0 2px, transparent 3px),
+        linear-gradient(115deg, transparent 0 8%, rgba(255,255,255,0.12) 8% 9%, transparent 9% 18%, rgba(255,255,255,0.12) 18% 19%, transparent 19% 100%),
+        radial-gradient(circle at 20% 75%, rgba(70, 167, 125, 0.18) 0 18%, transparent 19%),
+        radial-gradient(circle at 75% 70%, rgba(70, 167, 125, 0.16) 0 20%, transparent 21%),
+        radial-gradient(circle at 60% 20%, rgba(70, 167, 125, 0.12) 0 14%, transparent 15%);
+      animation: route-drift 30s linear infinite;
+      pointer-events: none;
     }
 
-    .stars-bg::after {
-      content: '';
+    .travel-bg::after {
+      content: '☁️    ☁️      ☁️';
       position: absolute;
-      width: 100%;
-      height: 100%;
-      background-image:
-        radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.8), transparent),
-        radial-gradient(1px 1px at 70% 40%, rgba(255,255,255,0.8), transparent),
-        radial-gradient(1px 1px at 30% 60%, rgba(255,255,255,0.8), transparent),
-        radial-gradient(1px 1px at 85% 80%, rgba(255,255,255,0.8), transparent);
-      background-size: 300px 300px;
-      animation: stars-twinkle 3s ease-in-out infinite;
+      inset: 0;
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      letter-spacing: 4rem;
+      color: rgba(255,255,255,0.4);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-around;
+      padding-top: 8%;
+      animation: cloud-float 7s ease-in-out infinite;
+      pointer-events: none;
     }
 
     .sign-board {
-      background: linear-gradient(135deg, rgba(255, 193, 7, 0.2) 0%, rgba(255, 152, 0, 0.2) 100%);
-      border: 3px solid #ffc107;
-      box-shadow: 0 0 30px rgba(255, 193, 7, 0.5), inset 0 0 20px rgba(255, 193, 7, 0.2);
+      background: linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(255, 244, 225, 0.95) 100%);
+      border: 3px solid rgba(232, 172, 79, 0.95);
+      box-shadow: 0 25px 60px rgba(88, 88, 88, 0.18), inset 0 0 20px rgba(255, 255, 255, 0.55);
     }
 
     .spaceship {
       font-size: 4rem;
-      filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.8));
+      filter: drop-shadow(0 10px 18px rgba(14, 91, 145, 0.35));
     }
 
     .planet-display {
@@ -143,33 +142,34 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 15rem;
-      opacity: 0.1;
+      font-size: 14rem;
+      opacity: 0.12;
       pointer-events: none;
       z-index: 1;
       transition: opacity 0.5s ease;
+      filter: drop-shadow(0 18px 35px rgba(255,255,255,0.2));
     }
   </style>
   <style>@view-transition { navigation: auto; }</style>
  </head>
  <body class="h-full m-0 p-0 overflow-auto">
-  <!-- 🎵 BGM（宇宙風・ループ再生） -->
+  <!-- 🎵 BGM（旅気分・ループ再生） -->
   <audio id="bgm" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_8c3a6a6f7c.mp3?filename=space-ambient-110624.mp3" loop preload="auto"></audio>
   <!-- 🔊 効果音 -->
   <audio id="sfx-explosion" src="https://cdn.pixabay.com/download/audio/2022/03/10/audio_2d6b9f1e7a.mp3?filename=explosion-6087.mp3" preload="auto"></audio>
   <audio id="sfx-fanfare" src="https://cdn.pixabay.com/download/audio/2022/03/24/audio_9c2a1a46a8.mp3?filename=success-fanfare-trumpets-6185.mp3" preload="auto"></audio>
-  <div id="app" class="w-full min-h-full stars-bg flex flex-col items-center justify-center p-6" style="background: linear-gradient(180deg, #000428 0%, #004e92 100%);"><!-- 背景の惑星表示 -->
-   <div id="planet-bg" class="planet-display">🌍</div>
+  <div id="app" class="w-full min-h-full travel-bg flex flex-col items-center justify-center p-6" style="background: linear-gradient(180deg, #8fd3ff 0%, #dff7ff 52%, #fff5de 100%);"><!-- 背景の旅先表示 -->
+   <div id="planet-bg" class="planet-display">🗾</div>
 
    <!-- スタート画面 -->
    <div id="start-screen" class="text-center relative z-10">
     <div class="animate-float mb-8">
-     <div class="text-7xl mb-6">🚀</div>
-     <h1 id="title" class="font-game text-5xl md:text-6xl font-black tracking-wider mb-4" style="color: #00ffff; text-shadow: 0 0 40px rgba(0, 255, 255, 0.8), 0 0 80px rgba(0, 255, 255, 0.4);">中１宇宙タイピングクエスト</h1>
-     <div class="font-jp text-xl mb-2" style="color: #ffd700;">🌌 宇宙からのミッション 🌌</div>
-     <p class="font-jp text-gray-300 text-lg leading-relaxed">看板の問題を答えて打ち破り、<br>宇宙の彼方へ進め！</p>
+     <div class="text-7xl mb-6">✈️</div>
+     <h1 id="title" class="font-game text-5xl md:text-6xl font-black tracking-wider mb-4" style="color: #0e5b91; text-shadow: 0 10px 30px rgba(14, 91, 145, 0.22);">中１世界一周タイピングツアー</h1>
+     <div class="font-jp text-xl mb-2" style="color: #ff8a3d;">🌏 世界をめぐるフライトミッション 🌏</div>
+     <p class="font-jp text-slate-700 text-lg leading-relaxed">看板の問題を答えて打ち破り、<br>世界の国々を空の旅でめぐろう！</p>
     </div>
-    <button id="start-btn" class="font-game text-2xl px-16 py-5 rounded-2xl font-bold transition-all duration-300 hover:scale-110 hover:shadow-2xl" style="background: linear-gradient(135deg, #00ffff 0%, #0099ff 100%); color: #000428; box-shadow: 0 0 30px rgba(0, 255, 255, 0.6);"> 🚀 出発 </button>
+    <button id="start-btn" class="font-game text-2xl px-16 py-5 rounded-2xl font-bold transition-all duration-300 hover:scale-110 hover:shadow-2xl" style="background: linear-gradient(135deg, #0e5b91 0%, #ffb24d 100%); color: white; box-shadow: 0 12px 28px rgba(14, 91, 145, 0.25);"> ✈️ 旅に出る </button>
     <div class="mt-10 font-jp text-gray-400 text-sm">
      <p>💡 看板の問題に、ひらがなをローマ字で答えよう</p>
      <p class="mt-2">5秒後にヒントが表示されます</p>
@@ -180,29 +180,29 @@
    <!-- コース選択画面 -->
    <div id="course-screen" class="hidden text-center relative z-10 w-full max-w-4xl">
     <div class="mb-8">
-     <h2 class="font-game text-4xl md:text-5xl font-black tracking-wider mb-4" style="color: #00ffff; text-shadow: 0 0 40px rgba(0, 255, 255, 0.8);">コース選択</h2>
-     <p class="font-jp text-gray-300 text-lg">挑戦するコースを選んでください</p>
+     <h2 class="font-game text-4xl md:text-5xl font-black tracking-wider mb-4" style="color: #0e5b91; text-shadow: 0 10px 25px rgba(14, 91, 145, 0.18);">コース選択</h2>
+     <p class="font-jp text-slate-700 text-lg">挑戦するコースを選んでください</p>
     </div>
     <div id="course-buttons" class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8"></div>
     <div class="flex flex-col sm:flex-row justify-center gap-4">
-     <button id="show-ranking-btn" class="font-jp text-lg px-8 py-3 rounded-xl transition-all duration-300 hover:scale-105" style="background: linear-gradient(135deg, rgba(255, 215, 0, 0.95) 0%, rgba(255, 165, 0, 0.95) 100%); color: #000428; box-shadow: 0 0 20px rgba(255, 215, 0, 0.35);"> 🏆 ランキングを表示 </button>
-     <button id="back-to-start-btn" class="font-jp text-lg px-8 py-3 rounded-xl transition-all duration-300 hover:scale-105" style="background: rgba(255, 255, 255, 0.1); color: white; border: 2px solid rgba(255, 255, 255, 0.3);"> ← もどる </button>
+     <button id="show-ranking-btn" class="font-jp text-lg px-8 py-3 rounded-xl transition-all duration-300 hover:scale-105" style="background: linear-gradient(135deg, rgba(255, 138, 61, 0.95) 0%, rgba(255, 191, 102, 0.95) 100%); color: white; box-shadow: 0 12px 28px rgba(255, 138, 61, 0.22);"> 🧳 ツアーランキングを表示 </button>
+     <button id="back-to-start-btn" class="font-jp text-lg px-8 py-3 rounded-xl transition-all duration-300 hover:scale-105" style="background: rgba(255, 255, 255, 0.58); color: #16324a; border: 2px solid rgba(14, 91, 145, 0.18);"> ← もどる </button>
     </div>
    </div>
 
    <!-- ランキング画面 -->
    <div id="ranking-screen" class="hidden text-center relative z-10 w-full max-w-4xl">
     <div class="mb-8">
-     <h2 class="font-game text-4xl md:text-5xl font-black tracking-wider mb-4" style="color: #ffd700; text-shadow: 0 0 40px rgba(255, 215, 0, 0.8);">ランキング</h2>
-     <p class="font-jp text-gray-300 text-lg">挑戦前にコース別トップ10を確認できます</p>
+     <h2 class="font-game text-4xl md:text-5xl font-black tracking-wider mb-4" style="color: #ff8a3d; text-shadow: 0 0 40px rgba(255, 138, 61, 0.45);">ツアーランキング</h2>
+     <p class="font-jp text-slate-700 text-lg">宇宙ランキングとは別集計の、世界一周版トップ10です</p>
     </div>
-    <div class="rounded-3xl p-6 md:p-8" style="background: rgba(0, 0, 0, 0.55); border: 2px solid rgba(255, 215, 0, 0.35); box-shadow: 0 0 30px rgba(255, 215, 0, 0.15);">
+    <div class="rounded-3xl p-6 md:p-8" style="background: rgba(255, 255, 255, 0.7); border: 2px solid rgba(255, 138, 61, 0.35); box-shadow: 0 20px 40px rgba(88, 88, 88, 0.12); backdrop-filter: blur(8px);">
      <div id="ranking-course-tabs" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6"></div>
-     <div class="font-jp text-lg mb-4" style="color: #ffd700;">🏆 <span id="ranking-course-title">いきものコース</span> トップ10</div>
+     <div class="font-jp text-lg mb-4" style="color: #ff8a3d;">🧳 <span id="ranking-course-title">いきものコース</span> トップ10</div>
      <div id="ranking-list" class="font-jp text-sm space-y-2 text-left"></div>
     </div>
     <div class="mt-6">
-     <button id="back-to-course-btn" class="font-jp text-lg px-8 py-3 rounded-xl transition-all duration-300 hover:scale-105" style="background: rgba(255, 255, 255, 0.1); color: white; border: 2px solid rgba(255, 255, 255, 0.3);"> ← コース選択にもどる </button>
+     <button id="back-to-course-btn" class="font-jp text-lg px-8 py-3 rounded-xl transition-all duration-300 hover:scale-105" style="background: rgba(255, 255, 255, 0.58); color: #16324a; border: 2px solid rgba(14, 91, 145, 0.18);"> ← コース選択にもどる </button>
     </div>
    </div>
 
@@ -211,48 +211,48 @@
     <!-- サイドゲージ -->
     <div class="hidden md:block w-32 flex-shrink-0">
      <div class="sticky top-6">
-      <div class="font-jp text-sm text-center mb-3" style="color: #00ffff;">進行状況</div>
-      <div class="relative rounded-full p-2" style="background: rgba(0, 0, 0, 0.6); border: 2px solid rgba(0, 255, 255, 0.3); height: 500px;">
-       <div class="absolute bottom-2 left-2 right-2 rounded-full" style="background: rgba(255, 255, 255, 0.1); top: 2px;"></div>
-       <div id="progress-gauge" class="absolute bottom-2 left-2 right-2 rounded-full transition-all duration-500" style="background: linear-gradient(to top, #00ffff, #0099ff); height: 0%; box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);"></div>
+      <div class="font-jp text-sm text-center mb-3" style="color: #0e5b91;">フライト状況</div>
+      <div class="relative rounded-full p-2" style="background: rgba(255, 255, 255, 0.66); border: 2px solid rgba(14, 91, 145, 0.2); height: 500px; box-shadow: inset 0 0 30px rgba(255,255,255,0.45);">
+       <div class="absolute bottom-2 left-2 right-2 rounded-full" style="background: rgba(14, 91, 145, 0.08); top: 2px;"></div>
+       <div id="progress-gauge" class="absolute bottom-2 left-2 right-2 rounded-full transition-all duration-500" style="background: linear-gradient(to top, #ffb24d, #ff7a59); height: 0%; box-shadow: 0 0 20px rgba(255, 122, 89, 0.35);"></div>
        <div id="planet-markers" class="absolute inset-0"></div>
-       <div id="ship-marker" class="absolute left-1/2 transform -translate-x-1/2 transition-all duration-500 text-3xl" style="bottom: 0%;">🚀</div>
+       <div id="ship-marker" class="absolute left-1/2 transform -translate-x-1/2 transition-all duration-500 text-3xl" style="bottom: 0%;">✈️</div>
       </div>
-      <div id="gauge-planet-name" class="font-jp text-xs text-center mt-3" style="color: #ffd700;">🌍 地球</div>
+      <div id="gauge-planet-name" class="font-jp text-xs text-center mt-3" style="color: #ff8a3d;">🇯🇵 日本</div>
      </div>
     </div>
 
     <!-- メインゲームエリア -->
     <div class="flex-1">
-     <div class="text-center mb-6"><div id="spaceship" class="spaceship inline-block">🚀</div></div>
+     <div class="text-center mb-6"><div id="spaceship" class="spaceship inline-block">✈️</div></div>
 
      <!-- ステータスバー -->
-     <div class="flex justify-between items-center mb-6 px-4 rounded-xl p-4" style="background: rgba(0, 0, 0, 0.5); border: 2px solid rgba(0, 255, 255, 0.3);">
-      <div class="text-center"><div class="font-jp text-gray-400 text-sm mb-1">スコア</div><div id="score" class="font-game text-3xl font-bold" style="color: #00ffff;">0</div></div>
-      <div class="text-center"><div class="font-jp text-gray-400 text-sm mb-1">現在地</div><div id="location" class="font-jp text-xl font-bold" style="color: #ffd700;">🌍 地球</div></div>
-      <div class="text-center"><div class="font-jp text-gray-400 text-sm mb-1">残り時間</div><div id="timer" class="font-game text-3xl font-bold" style="color: #ff6b9d;">60</div></div>
-      <div class="text-center"><div class="font-jp text-gray-400 text-sm mb-1">正確率</div><div id="accuracy" class="font-game text-3xl font-bold" style="color: #00ff88;">100%</div></div>
+     <div class="flex justify-between items-center mb-6 px-4 rounded-xl p-4" style="background: rgba(255, 255, 255, 0.72); border: 2px solid rgba(14, 91, 145, 0.18); box-shadow: 0 12px 30px rgba(57, 97, 123, 0.08);">
+      <div class="text-center"><div class="font-jp text-gray-400 text-sm mb-1">スコア</div><div id="score" class="font-game text-3xl font-bold" style="color: #0e5b91;">0</div></div>
+      <div class="text-center"><div class="font-jp text-gray-400 text-sm mb-1">現在地</div><div id="location" class="font-jp text-xl font-bold" style="color: #ff7a59;">🇯🇵 日本</div></div>
+      <div class="text-center"><div class="font-jp text-gray-400 text-sm mb-1">残り時間</div><div id="timer" class="font-game text-3xl font-bold" style="color: #ff5e7a;">60</div></div>
+      <div class="text-center"><div class="font-jp text-gray-400 text-sm mb-1">正確率</div><div id="accuracy" class="font-game text-3xl font-bold" style="color: #2f9e44;">100%</div></div>
      </div>
 
      <!-- 看板（問題表示エリア） -->
      <div id="sign-board" class="sign-board rounded-3xl p-8 mb-6 relative">
-      <div class="absolute top-4 left-1/2 transform -translate-x-1/2 font-jp text-sm" style="color: #ffd700;">🎯 看板 🎯</div>
-      <div id="word-hint" class="font-jp text-xl md:text-2xl mb-8 text-center leading-relaxed mt-4" style="color: #ffffff; min-height: 70px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);"></div>
-      <div class="font-jp text-sm mb-2 text-center" style="color: #ffd700;">答え（ローマ字で入力）</div>
-      <div id="current-word" class="font-jp text-3xl md:text-4xl tracking-wider text-center mb-4" style="color: white; min-height: 50px; text-shadow: 0 0 10px rgba(255,255,255,0.5);"></div>
-      <div id="answer-hint" class="font-jp text-lg text-center" style="color: #00ffff; min-height: 30px; opacity: 0; text-shadow: 0 0 10px rgba(0,255,255,0.8);"></div>
+      <div class="absolute top-4 left-1/2 transform -translate-x-1/2 font-jp text-sm" style="color: #ff8a3d;" >🎫 入国ゲート 🎫</div>
+      <div id="word-hint" class="font-jp text-xl md:text-2xl mb-8 text-center leading-relaxed mt-4" style="color: #20435c; min-height: 70px; text-shadow: 0 2px 4px rgba(255,255,255,0.35);"></div>
+      <div class="font-jp text-sm mb-2 text-center" style="color: #ff8a3d;">答え（ローマ字で入力）</div>
+      <div id="current-word" class="font-jp text-3xl md:text-4xl tracking-wider text-center mb-4" style="color: #16324a; min-height: 50px; text-shadow: 0 0 10px rgba(255,255,255,0.65);"></div>
+      <div id="answer-hint" class="font-jp text-lg text-center" style="color: #0e5b91; min-height: 30px; opacity: 0; text-shadow: 0 0 10px rgba(14,91,145,0.3);"></div>
      </div>
 
      <!-- 入力表示 -->
-     <div class="rounded-xl p-4 mb-4 text-center" style="background: rgba(0, 0, 0, 0.5); border: 2px solid rgba(0, 255, 255, 0.3);">
-       <span id="input-display" class="font-game text-2xl tracking-wider" style="color: rgba(255, 255, 255, 0.6);">入力してください...</span>
+     <div class="rounded-xl p-4 mb-4 text-center" style="background: rgba(255, 255, 255, 0.72); border: 2px solid rgba(14, 91, 145, 0.18); box-shadow: 0 12px 30px rgba(57, 97, 123, 0.08);">
+       <span id="input-display" class="font-game text-2xl tracking-wider" style="color: rgba(22, 50, 74, 0.45);">入力してください...</span>
      </div>
 
      <!-- 隠し入力フィールド -->
      <input type="text" id="hidden-input" class="opacity-0 absolute" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
 
      <!-- コンボ表示 -->
-     <div id="combo-display" class="text-center font-game text-2xl" style="color: #ff6b9d; text-shadow: 0 0 10px rgba(255, 107, 157, 0.8);"><span id="combo-count"></span></div>
+     <div id="combo-display" class="text-center font-game text-2xl" style="color: #ff5e7a; text-shadow: 0 0 10px rgba(255, 94, 122, 0.35);"><span id="combo-count"></span></div>
     </div>
    </div>
 
@@ -262,8 +262,8 @@
     <div id="flight-animation" class="fixed inset-0 pointer-events-none z-50 hidden">
      <div class="relative w-full h-full">
       <div id="flight-gauge" class="absolute left-1/2 transform -translate-x-1/2 w-32" style="height: 80%; top: 10%;">
-       <div class="relative h-full rounded-full p-2" style="background: rgba(0, 0, 0, 0.8); border: 3px solid rgba(0, 255, 255, 0.5);">
-        <div id="flight-rocket" class="absolute text-5xl" style="bottom: 0%; left: 50%; transform: translateX(-50%);">🚀</div>
+       <div class="relative h-full rounded-full p-2" style="background: rgba(255, 255, 255, 0.82); border: 3px solid rgba(14, 91, 145, 0.18); box-shadow: 0 20px 40px rgba(57, 97, 123, 0.12);">
+        <div id="flight-rocket" class="absolute text-5xl" style="bottom: 0%; left: 50%; transform: translateX(-50%);">✈️</div>
         <div id="flight-planets"></div>
        </div>
       </div>
@@ -271,49 +271,49 @@
     </div>
 
     <div class="mb-8 animate-fadeIn">
-     <div id="final-planet-emoji" class="text-8xl mb-6">🌍</div>
-     <h2 class="font-game text-4xl font-bold mb-4" style="color: #00ffff; text-shadow: 0 0 30px rgba(0, 255, 255, 0.8);">ミッション完了！</h2>
-     <div id="final-location" class="font-jp text-2xl mb-6" style="color: #ffd700;">到達地点：🌍 地球</div>
-     <div id="new-record-message" class="hidden font-jp text-2xl mb-6 animate-fadeIn" style="color: #ff6b9d; text-shadow: 0 0 20px rgba(255, 107, 157, 0.8);">🎉 トップ10入り！ニックネームを登録しよう！ 🎉</div>
+     <div id="final-planet-emoji" class="text-8xl mb-6">🗾</div>
+     <h2 class="font-game text-4xl font-bold mb-4" style="color: #0e5b91; text-shadow: 0 10px 24px rgba(14, 91, 145, 0.18);">フライト完了！</h2>
+     <div id="final-location" class="font-jp text-2xl mb-6" style="color: #ff8a3d;">到着地：🇯🇵 日本</div>
+     <div id="new-record-message" class="hidden font-jp text-2xl mb-6 animate-fadeIn" style="color: #ff5e7a; text-shadow: 0 0 20px rgba(255, 94, 122, 0.35);">🎉 ツアーランキングのトップ10入り！ニックネームを登録しよう！ 🎉</div>
     </div>
 
-    <div class="rounded-2xl p-8 mb-8" style="background: rgba(0, 0, 0, 0.6); border: 2px solid rgba(0, 255, 255, 0.4);">
+    <div class="rounded-2xl p-8 mb-8" style="background: rgba(255, 255, 255, 0.68); border: 2px solid rgba(14, 91, 145, 0.2); box-shadow: 0 20px 40px rgba(57, 97, 123, 0.1);">
      <div class="grid grid-cols-2 gap-6">
-      <div class="text-center"><div class="font-jp text-gray-400 mb-2">最終スコア</div><div id="final-score" class="font-game text-5xl font-bold" style="color: #00ffff; text-shadow: 0 0 20px rgba(0, 255, 255, 0.6);">0</div></div>
-      <div class="text-center"><div class="font-jp text-gray-400 mb-2">タイプ数</div><div id="final-typed" class="font-game text-5xl font-bold" style="color: #00ff88;">0</div></div>
-      <div class="text-center"><div class="font-jp text-gray-400 mb-2">正確率</div><div id="final-accuracy" class="font-game text-5xl font-bold" style="color: #ffd700;">100%</div></div>
+      <div class="text-center"><div class="font-jp text-gray-400 mb-2">最終スコア</div><div id="final-score" class="font-game text-5xl font-bold" style="color: #0e5b91; text-shadow: 0 10px 20px rgba(14, 91, 145, 0.18);">0</div></div>
+      <div class="text-center"><div class="font-jp text-gray-400 mb-2">タイプ数</div><div id="final-typed" class="font-game text-5xl font-bold" style="color: #2f9e44;">0</div></div>
+      <div class="text-center"><div class="font-jp text-gray-400 mb-2">正確率</div><div id="final-accuracy" class="font-game text-5xl font-bold" style="color: #ff8a3d;">100%</div></div>
       <div class="text-center"><div class="font-jp text-gray-400 mb-2">最高コンボ</div><div id="final-combo" class="font-game text-5xl font-bold" style="color: #ff6b9d;">0</div></div>
      </div>
     </div>
 
     <!-- ニックネーム入力フォーム -->
-    <div id="nickname-form" class="hidden mb-8 rounded-xl p-6" style="background: rgba(0, 0, 0, 0.6); border: 2px solid rgba(255, 215, 0, 0.6);">
-      <label for="nickname-input" class="font-jp text-lg mb-3 block" style="color: #ffd700;">ニックネームを入力してください（6文字まで）</label>
+    <div id="nickname-form" class="hidden mb-8 rounded-xl p-6" style="background: rgba(255, 255, 255, 0.74); border: 2px solid rgba(255, 138, 61, 0.35); box-shadow: 0 16px 34px rgba(57, 97, 123, 0.12);">
+      <label for="nickname-input" class="font-jp text-lg mb-3 block" style="color: #ff8a3d;">ニックネームを入力してください（6文字まで）</label>
       <div class="flex gap-3 justify-center">
-        <input type="text" id="nickname-input" maxlength="6" class="font-jp px-4 py-3 rounded-lg text-xl text-center" style="background: rgba(255, 255, 255, 0.9); color: #000; border: 2px solid #ffd700; width: 200px;" placeholder="ニックネーム">
-        <button id="submit-nickname-btn" class="font-jp px-6 py-3 rounded-lg font-bold transition-all duration-300 hover:scale-105" style="background: linear-gradient(135deg, #ffd700 0%, #ffa500 100%); color: #000;"> 登録 </button>
+        <input type="text" id="nickname-input" maxlength="6" class="font-jp px-4 py-3 rounded-lg text-xl text-center" style="background: rgba(255, 255, 255, 0.95); color: #16324a; border: 2px solid #ffb24d; width: 200px;" placeholder="ニックネーム">
+        <button id="submit-nickname-btn" class="font-jp px-6 py-3 rounded-lg font-bold transition-all duration-300 hover:scale-105" style="background: linear-gradient(135deg, #ff8a3d 0%, #ffbf66 100%); color: white;"> 登録 </button>
       </div>
     </div>
 
     <!-- 過去のベストスコア -->
-    <div id="best-scores" class="mt-8 rounded-xl p-6 max-w-md mx-auto mb-8" style="background: rgba(0, 0, 0, 0.6); border: 2px solid rgba(0, 255, 255, 0.4);">
-     <div class="font-jp text-lg mb-4 text-center" style="color: #ffd700;">🏆 トップ10ランキング 🏆</div>
+    <div id="best-scores" class="mt-8 rounded-xl p-6 max-w-md mx-auto mb-8" style="background: rgba(255, 255, 255, 0.72); border: 2px solid rgba(14, 91, 145, 0.2); box-shadow: 0 20px 40px rgba(57, 97, 123, 0.1);">
+     <div class="font-jp text-lg mb-4 text-center" style="color: #ff8a3d;">🧳 世界一周トップ10 🧳</div>
      <div id="best-scores-list" class="font-jp text-sm space-y-2"></div>
     </div>
 
-    <button id="retry-btn" class="font-game text-2xl px-16 py-5 rounded-2xl font-bold transition-all duration-300 hover:scale-110" style="background: linear-gradient(135deg, #00ffff 0%, #0099ff 100%); color: #000428; box-shadow: 0 0 30px rgba(0, 255, 255, 0.6);"> 🚀 再挑戦 </button>
+    <button id="retry-btn" class="font-game text-2xl px-16 py-5 rounded-2xl font-bold transition-all duration-300 hover:scale-110" style="background: linear-gradient(135deg, #0e5b91 0%, #ffb24d 100%); color: white; box-shadow: 0 12px 28px rgba(14, 91, 145, 0.25);"> ✈️ もう一度旅する </button>
    </div>
   </div>
 
   <script>
     const defaultConfig = {
-      game_title: '中１宇宙タイピングクエスト',
-      start_button_text: '🚀 出発',
-      background_start: '#000428',
-      background_end: '#004e92',
-      primary_color: '#00ffff',
-      accent_color: '#ffd700',
-      danger_color: '#ff6b9d'
+      game_title: '中１世界一周タイピングツアー',
+      start_button_text: '✈️ 旅に出る',
+      background_start: '#8fd3ff',
+      background_end: '#fff5de',
+      primary_color: '#0e5b91',
+      accent_color: '#ff8a3d',
+      danger_color: '#ff5e7a'
     };
 
     let config = { ...defaultConfig };
@@ -376,17 +376,19 @@
       'っ': ['ltu', 'xtu', 'ltsu']
     };
 
-    // 太陽系の惑星データ（2000点で太陽系の外へ）
+    // 世界一周の経由地データ（2000点で日本へ帰国）
     const planets = [
-      { name: '地球', distance: 0, emoji: '🌍', color: '#4a90e2' },
-      { name: '月', distance: 120, emoji: '🌙', color: '#b8c5d6' },
-      { name: '火星', distance: 300, emoji: '🔴', color: '#e74c3c' },
-      { name: '木星', distance: 550, emoji: '🟠', color: '#f39c12' },
-      { name: '土星', distance: 850, emoji: '🪐', color: '#f1c40f' },
-      { name: '天王星', distance: 1200, emoji: '🔵', color: '#3498db' },
-      { name: '海王星', distance: 1550, emoji: '💙', color: '#2980b9' },
-      { name: '冥王星', distance: 1800, emoji: '⚫', color: '#95a5a6' },
-      { name: '太陽系の外', distance: 2000, emoji: '✨', color: '#9b59b6' }
+      { name: '日本', distance: 0, emoji: '🇯🇵', color: '#d64545' },
+      { name: '韓国', distance: 220, emoji: '🇰🇷', color: '#2f80ed' },
+      { name: '中国', distance: 440, emoji: '🇨🇳', color: '#d62828' },
+      { name: 'インド', distance: 660, emoji: '🇮🇳', color: '#ff8a3d' },
+      { name: 'トルコ', distance: 900, emoji: '🇹🇷', color: '#d64545' },
+      { name: 'イタリア', distance: 1140, emoji: '🇮🇹', color: '#2e8b57' },
+      { name: 'フランス', distance: 1380, emoji: '🇫🇷', color: '#355cde' },
+      { name: 'イギリス', distance: 1600, emoji: '🇬🇧', color: '#294c9f' },
+      { name: 'アメリカ', distance: 1800, emoji: '🇺🇸', color: '#cf3b3b' },
+      { name: 'ブラジル', distance: 1920, emoji: '🇧🇷', color: '#2f9e44' },
+      { name: '日本', distance: 2000, emoji: '🗾', color: '#d64545' }
     ];
 
     // 単語リスト（コース別）
@@ -606,12 +608,12 @@
     };
 
     const GAME_VARIANT = {
-      variant_id: 'space_tour_v1',
+      variant_id: 'world_trip_tour_v1',
       ranking_collection: 'typing_scores',
-      ranking_theme_key: 'space_tour',
-      ranking_theme_label: '宇宙タイピングクエスト',
-      ranking_season: 'season_1',
-      ranking_schema_version: 1,
+      ranking_theme_key: 'world_trip_tour',
+      ranking_theme_label: '世界一周タイピングツアー',
+      ranking_season: 'world_trip_season_1',
+      ranking_schema_version: 2,
       courses: [
         {
           id: 'creature',
@@ -676,7 +678,7 @@
 
     function getCourseTheme(courseId) {
       const course = getCourseConfig(courseId);
-      return course ? { color: course.color, glow: course.glow } : { color: '#00ffff', glow: 'rgba(0, 255, 255, 0.35)' };
+      return course ? { color: course.color, glow: course.glow } : { color: '#0e5b91', glow: 'rgba(14, 91, 145, 0.22)' };
     }
 
     function createEmptyScoreHistory() {
@@ -788,8 +790,8 @@
           if (!isCurrentThemeSeasonRecord(d)) return;
           list.push({
             score: Number(d.score || 0),
-            planet_name: d.planet_name || '地球',
-            planet_emoji: d.planet_emoji || '🌍',
+            planet_name: d.planet_name || '日本',
+            planet_emoji: d.planet_emoji || '🇯🇵',
             course,
             nickname: d.nickname || '名無し',
             timestamp: (d.timestamp || '')
@@ -833,8 +835,8 @@
           if (String(d.course || '') !== String(course)) return;
           list2.push({
             score: Number(d.score || 0),
-            planet_name: d.planet_name || '地球',
-            planet_emoji: d.planet_emoji || '🌍',
+            planet_name: d.planet_name || '日本',
+            planet_emoji: d.planet_emoji || '🇯🇵',
             course,
             nickname: d.nickname || '名無し',
             timestamp: (d.timestamp || '')
@@ -902,7 +904,7 @@
         const medal = index < 3 ? medals[index] : `${index + 1}位`;
         const nickname = record.nickname || '名無し';
         return `
-          <div class="flex items-center justify-between gap-3 p-3 rounded-lg" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.08);">
+          <div class="flex items-center justify-between gap-3 p-3 rounded-lg" style="background: rgba(255, 255, 255, 0.72); border: 1px solid rgba(14, 91, 145, 0.12); box-shadow: 0 8px 18px rgba(57, 97, 123, 0.08);">
             <div class="flex items-center gap-3 min-w-0">
               <span class="text-2xl w-12 flex-shrink-0">${medal}</span>
               <span class="text-lg flex-shrink-0">${record.planet_emoji} ${record.planet_name}</span>
@@ -932,10 +934,10 @@
         const course = btn.getAttribute('data-course');
         const theme = getCourseTheme(course);
         const isActive = course === rankingScreenSelectedCourse;
-        btn.style.background = isActive ? `linear-gradient(135deg, ${theme.color} 0%, rgba(255,255,255,0.2) 100%)` : `${theme.glow}`;
+        btn.style.background = isActive ? `linear-gradient(135deg, ${theme.color} 0%, rgba(255,255,255,0.95) 100%)` : `${theme.glow}`;
         btn.style.borderColor = isActive ? theme.color : theme.glow;
         btn.style.boxShadow = isActive ? `0 0 24px ${theme.glow}` : 'none';
-        btn.style.color = 'white';
+        btn.style.color = '#16324a';
       });
     }
 
@@ -1103,9 +1105,9 @@
       const progress = Math.min((gameState.score / maxDistance) * 100, 100);
       progressGaugeEl.style.height = `${progress}%`;
       shipMarkerEl.style.bottom = `${progress}%`;
-      const currentPlanet = getPlanetByScore(gameState.score);
-      gaugePlanetNameEl.textContent = `${currentPlanet.emoji} ${currentPlanet.name}`;
-      gaugePlanetNameEl.style.color = currentPlanet.color;
+      const currentStop = getPlanetByScore(gameState.score);
+      gaugePlanetNameEl.textContent = `${currentStop.emoji} ${currentStop.name}`;
+      gaugePlanetNameEl.style.color = currentStop.color;
     }
 
     startBtn.addEventListener('click', () => {
@@ -1262,7 +1264,7 @@
           if (!gameState.hintShown && gameState.currentCharIndex === 0) {
             displayChar = '●'.repeat(charInfo.hiragana.length);
           }
-          style = 'color: #ffd700; text-shadow: 0 0 20px rgba(255, 215, 0, 1), 0 0 40px rgba(255, 215, 0, 0.6); border-bottom: 4px solid #ffd700; display: inline-block; padding-bottom: 2px; transform: scale(1.2);';
+          style = 'color: #ff8a3d; text-shadow: 0 0 14px rgba(255, 138, 61, 0.45); border-bottom: 4px solid #ffb24d; display: inline-block; padding-bottom: 2px; transform: scale(1.2);';
         } else {
           if (!gameState.hintShown && gameState.currentCharIndex === 0) {
             displayChar = '●'.repeat(charInfo.hiragana.length);
@@ -1288,7 +1290,7 @@
       gameState.score += 10 + Math.floor(gameState.combo / 5) * 5;
       if (gameState.combo > gameState.maxCombo) gameState.maxCombo = gameState.combo;
 
-      // 宇宙船を前進
+      // 飛行機を前進
       spaceshipEl.classList.add('animate-ship-move');
       setTimeout(() => spaceshipEl.classList.remove('animate-ship-move'), 500);
 
@@ -1443,14 +1445,14 @@
 
         const targetPosition = Math.min((targetScore / maxDistance) * 100, 100);
         flightRocketEl.style.setProperty('--flight-end', `${targetPosition}%`);
-        flightRocketEl.style.animation = 'rocket-flight 3s ease-in-out forwards';
+        flightRocketEl.style.animation = 'plane-flight 3s ease-in-out forwards';
 
         let delay = 0;
         planets.forEach((planet, index) => {
           if (targetScore >= planet.distance) {
             setTimeout(() => {
               const markers = flightPlanetsEl.children;
-              if (markers[index]) markers[index].style.animation = 'planet-pass 1s ease-in-out forwards';
+              if (markers[index]) markers[index].style.animation = 'stop-pass 1s ease-in-out forwards';
             }, delay);
             delay += 500;
           }
@@ -1497,7 +1499,7 @@
 
       document.getElementById('final-planet-emoji').textContent = finalPlanet.emoji;
       document.getElementById('final-planet-emoji').classList.add('animate-planet-arrive');
-      document.getElementById('final-location').textContent = `到達地点：${finalPlanet.emoji} ${finalPlanet.name}`;
+      document.getElementById('final-location').textContent = `到着地：${finalPlanet.emoji} ${finalPlanet.name}`;
       document.getElementById('final-location').style.color = finalPlanet.color;
 
       const newRecordMessageEl = document.getElementById('new-record-message');
@@ -1592,7 +1594,7 @@
 
       if (startBtnEl) {
         startBtnEl.textContent = newConfig.start_button_text || defaultConfig.start_button_text;
-        startBtnEl.style.background = `linear-gradient(135deg, ${newConfig.primary_color || defaultConfig.primary_color} 0%, #0099ff 100%)`;
+        startBtnEl.style.background = `linear-gradient(135deg, ${newConfig.primary_color || defaultConfig.primary_color} 0%, ${newConfig.accent_color || defaultConfig.accent_color} 100%)`;
       }
 
       if (appEl) {
