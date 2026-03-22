@@ -3,7 +3,7 @@
  <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>中１タイムトラベルタイピング</title>
+  <title>中２タイムトラベルタイピング</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="/_sdk/element_sdk.js"></script>
   <script src="/_sdk/data_sdk.js"></script>
@@ -185,7 +185,7 @@
    <div id="ranking-screen" class="hidden text-center relative z-10 w-full max-w-4xl">
     <div class="mb-8">
      <h2 class="font-game text-4xl md:text-5xl font-black tracking-wider mb-4" style="color: #ffd700; text-shadow: 0 0 40px rgba(255, 215, 0, 0.8);">タイムトラベルランキング</h2>
-     <p class="font-jp text-gray-300 text-lg">このタイムトラベル版だけのコース別トップ10を確認できます</p>
+     <p class="font-jp text-gray-300 text-lg">コース別トップ10を確認できます</p>
     </div>
     <div class="rounded-3xl p-6 md:p-8" style="background: rgba(0, 0, 0, 0.55); border: 2px solid rgba(255, 215, 0, 0.35); box-shadow: 0 0 30px rgba(255, 215, 0, 0.15);">
      <div id="ranking-course-tabs" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6"></div>
@@ -215,7 +215,7 @@
 
     <!-- メインゲームエリア -->
     <div class="flex-1">
-     <div class="text-center mb-6"><div id="spaceship" class="spaceship inline-block">🕰️</div></div>
+     <div class="text-center mb-6"><div id="spaceship" class="spaceship inline-block">🛸</div></div>
 
      <!-- ステータスバー -->
      <div class="flex justify-between items-center mb-6 px-4 rounded-xl p-4" style="background: rgba(17, 12, 29, 0.65); border: 2px solid rgba(255, 224, 163, 0.2);">
@@ -298,7 +298,7 @@
 
   <script>
     const defaultConfig = {
-      game_title: '中１タイムトラベルタイピング',
+      game_title: '中２タイムトラベルタイピング',
       start_button_text: '🕰️ タイムトラベル開始',
       background_start: '#2f1b44',
       background_end: '#26120d',
@@ -370,16 +370,16 @@
     // タイムトラベル到達データ（2000点で令和へ）
     const planets = [
       { name: '縄文', distance: 0, emoji: '🏺', color: '#d6b57a' },
-      { name: '弥生', distance: 120, emoji: '🌾', color: '#b8d36b' },
-      { name: '平安', distance: 300, emoji: '🎎', color: '#f3b3d1' },
-      { name: '鎌倉', distance: 500, emoji: '🛡️', color: '#8d6e63' },
-      { name: '戦国', distance: 700, emoji: '⚔️', color: '#ff8a65' },
-      { name: '江戸', distance: 950, emoji: '🏮', color: '#f6c177' },
-      { name: '明治', distance: 1200, emoji: '🚂', color: '#7fb3d5' },
-      { name: '大正', distance: 1450, emoji: '📻', color: '#c39bd3' },
-      { name: '昭和', distance: 1650, emoji: '📺', color: '#f5b041' },
-      { name: '平成', distance: 1850, emoji: '💿', color: '#76d7c4' },
-      { name: '令和', distance: 2000, emoji: '🌸', color: '#ff9eb5' }
+      { name: '弥生', distance: 300, emoji: '🌾', color: '#b8d36b' },
+      { name: '平安', distance: 600, emoji: '🎎', color: '#f3b3d1' },
+      { name: '鎌倉', distance: 900, emoji: '🛡️', color: '#8d6e63' },
+      { name: '戦国', distance: 1200, emoji: '⚔️', color: '#ff8a65' },
+      { name: '江戸', distance: 1500, emoji: '🏮', color: '#f6c177' },
+      { name: '明治', distance: 2000, emoji: '🚂', color: '#7fb3d5' },
+      { name: '大正', distance: 2500, emoji: '📻', color: '#c39bd3' },
+      { name: '昭和', distance: 3000, emoji: '📺', color: '#f5b041' },
+      { name: '平成', distance: 4000, emoji: '💿', color: '#76d7c4' },
+      { name: '令和', distance: 5000, emoji: '🌸', color: '#ff9eb5' }
     ];
 
     // 単語リスト（コース別）
