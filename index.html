@@ -374,6 +374,46 @@
       'っ': ['ltu', 'xtu', 'ltsu']
     };
 
+    function convertHiraganaToRomajiArray(text) {
+      const result = [];
+
+      for (let i = 0; i < text.length; i++) {
+        const currentChar = text[i];
+        const nextChar = text[i + 1];
+        const pair = nextChar ? currentChar + nextChar : currentChar;
+
+        if (currentChar === 'っ') {
+          const nextPair = text[i + 1] && text[i + 2] ? text[i + 1] + text[i + 2] : '';
+          const nextKana = hiraganaToRomaji[nextPair] ? nextPair : (text[i + 1] || '');
+          const nextRomajiList = hiraganaToRomaji[nextKana] || [];
+          const sokuonPrefixes = [...new Set(nextRomajiList
+            .map(romaji => romaji && romaji[0])
+            .filter(prefix => /^[a-z]$/i.test(prefix) && prefix !== 'n'))];
+
+          result.push({
+            hiragana: currentChar,
+            romaji: [...hiraganaToRomaji[currentChar], ...sokuonPrefixes]
+          });
+          continue;
+        }
+
+        if (hiraganaToRomaji[pair]) {
+          result.push({ hiragana: pair, romaji: hiraganaToRomaji[pair] });
+          i++;
+          continue;
+        }
+
+        if (hiraganaToRomaji[currentChar]) {
+          result.push({ hiragana: currentChar, romaji: hiraganaToRomaji[currentChar] });
+          continue;
+        }
+
+        result.push({ hiragana: currentChar, romaji: [currentChar] });
+      }
+
+      return result;
+    }
+
     // 世界一周ルートデータ（2000点で日本へ帰還）
     const planets = [
       { name: '日本', distance: 0, emoji: '🗾', color: '#93c5fd' },
@@ -1440,7 +1480,7 @@
       for (let pos = 0; pos < romajiInput.length; pos++) {
         const raw = romajiInput[pos];
         const ch = raw.toLowerCase();
-        if (!(/[a-z]/.test(ch) || ch === "'")) return false;
+        if (!(/[a-z]/.test(ch) || ch === "'" || ch === '-')) return false;
         if (idx >= arr.length) return false;
 
         // 「ん」：buf==='n' のときに子音が来たら確定して次へ（このキーは次のかなに回す）
