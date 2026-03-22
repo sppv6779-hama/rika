@@ -674,29 +674,46 @@
 
     let db = null;
     let firebaseReady = false;
+    let firebaseInitPromise = null;
+    let firebaseAuthReady = false;
 
     async function initFirebaseAndAuth() {
-      try {
-        if (!window.firebase || !firebase.initializeApp) throw new Error('Firebase SDK not loaded');
-        if (!firebase.apps || firebase.apps.length === 0) firebase.initializeApp(firebaseConfig);
-        if (!firebase.firestore) throw new Error('Firebase firestore not available');
+      if (firebaseInitPromise) return firebaseInitPromise;
 
-        // ★要件：書き込みは匿名ログイン必須（読み取りは誰でもOKだが、ここで先に匿名ログインしておく）
-        if (!firebase.auth) throw new Error('Firebase auth not available');
-        const auth = firebase.auth();
-        if (!auth.currentUser) {
-          await auth.signInAnonymously();
+      firebaseInitPromise = (async () => {
+        try {
+          if (!window.firebase || !firebase.initializeApp) throw new Error('Firebase SDK not loaded');
+          if (!firebase.apps || firebase.apps.length === 0) firebase.initializeApp(firebaseConfig);
+          if (!firebase.firestore) throw new Error('Firebase firestore not available');
+
+          // 読み込みは Firestore 初期化だけで十分なので、先に db を有効化する。
+          // 匿名ログイン失敗で db まで null にしてしまうと、ランキング読み込みも巻き添えで失敗するため分離する。
+          db = firebase.firestore();
+          firebaseReady = true;
+
+          // ★要件：書き込みは匿名ログイン必須。
+          // ここで失敗しても読み込みは継続できるよう、認証エラーは分けて扱う。
+          firebaseAuthReady = false;
+          if (!firebase.auth) throw new Error('Firebase auth not available');
+          const auth = firebase.auth();
+          if (!auth.currentUser) {
+            await auth.signInAnonymously();
+          }
+          firebaseAuthReady = true;
+          return true;
+        } catch (err) {
+          if (db) {
+            console.warn('Firebase auth init failed; ranking reads remain available:', err);
+            return true;
+          }
+          console.error('Firebase init failed:', err);
+          db = null;
+          firebaseReady = false;
+          return false;
         }
+      })();
 
-        db = firebase.firestore();
-        firebaseReady = true;
-        return true;
-      } catch (err) {
-        console.error('Firebase init failed:', err);
-        db = null;
-        firebaseReady = false;
-        return false;
-      }
+      return firebaseInitPromise;
     }
 
     // ✅ Firestoreコレクション名
@@ -873,11 +890,20 @@
     async function ensureWriteAuth() {
       if (!window.firebase || !firebase.auth) return false;
       try {
+        if (!firebaseReady || !db) {
+          const initialized = await initFirebaseAndAuth();
+          if (!initialized || !db) return false;
+        }
         const auth = firebase.auth();
-        if (auth.currentUser) return true;
+        if (auth.currentUser) {
+          firebaseAuthReady = true;
+          return true;
+        }
         await auth.signInAnonymously();
+        firebaseAuthReady = true;
         return true;
       } catch (e) {
+        firebaseAuthReady = false;
         console.warn('ensureWriteAuth failed:', e);
         return false;
       }
@@ -893,10 +919,17 @@
       }
 
       try {
+        if (!firebaseReady || !db) {
+          await initFirebaseAndAuth();
+        }
         if (!db) throw new Error('Firestore is not initialized (db is null). Cannot save.');
 
         const authed = await ensureWriteAuth();
-        if (!authed) throw new Error('匿名ログインに失敗したため、ランキング保存ができませんでした。');
+        if (!authed) {
+          throw new Error(firebaseAuthReady
+            ? 'ランキング保存ができませんでした。時間をおいて再度お試しください。'
+            : '匿名ログインに失敗したため、ランキング保存ができませんでした。');
+        }
 
         const course = gameState.selectedCourse;
         const colName = getRankingCollectionName();
