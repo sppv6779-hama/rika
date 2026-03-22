@@ -616,6 +616,7 @@
 
     let db = null;
     let firebaseReady = false;
+    let firebaseAuthReady = false;
 
     async function initFirebaseAndAuth() {
       try {
@@ -623,20 +624,33 @@
         if (!firebase.apps || firebase.apps.length === 0) firebase.initializeApp(firebaseConfig);
         if (!firebase.firestore) throw new Error('Firebase firestore not available');
 
-        // ★要件：書き込みは匿名ログイン必須（読み取りは誰でもOKだが、ここで先に匿名ログインしておく）
-        if (!firebase.auth) throw new Error('Firebase auth not available');
-        const auth = firebase.auth();
-        if (!auth.currentUser) {
-          await auth.signInAnonymously();
-        }
-
         db = firebase.firestore();
         firebaseReady = true;
+
+        // 読み取りは Firestore 初期化だけで進められるようにし、
+        // 匿名認証の失敗でランキング読み込みまで巻き添えにしない。
+        firebaseAuthReady = false;
+        if (!firebase.auth) {
+          console.warn('Firebase auth not available; ranking save will require a later retry.');
+          return true;
+        }
+
+        try {
+          const auth = firebase.auth();
+          if (!auth.currentUser) {
+            await auth.signInAnonymously();
+          }
+          firebaseAuthReady = true;
+        } catch (authErr) {
+          console.warn('Firebase anonymous auth failed during init; loading will continue, saving may be unavailable until retry:', authErr);
+        }
+
         return true;
       } catch (err) {
         console.error('Firebase init failed:', err);
         db = null;
         firebaseReady = false;
+        firebaseAuthReady = false;
         return false;
       }
     }
@@ -815,11 +829,20 @@
     async function ensureWriteAuth() {
       if (!window.firebase || !firebase.auth) return false;
       try {
+        if (!db && firebase.firestore) {
+          db = firebase.firestore();
+          firebaseReady = true;
+        }
         const auth = firebase.auth();
-        if (auth.currentUser) return true;
+        if (auth.currentUser) {
+          firebaseAuthReady = true;
+          return true;
+        }
         await auth.signInAnonymously();
+        firebaseAuthReady = true;
         return true;
       } catch (e) {
+        firebaseAuthReady = false;
         console.warn('ensureWriteAuth failed:', e);
         return false;
       }
@@ -835,10 +858,9 @@
       }
 
       try {
-        if (!db) throw new Error('Firestore is not initialized (db is null). Cannot save.');
-
         const authed = await ensureWriteAuth();
         if (!authed) throw new Error('匿名ログインに失敗したため、ランキング保存ができませんでした。');
+        if (!db) throw new Error('Firestore is not initialized (db is null). Cannot save.');
 
         const course = gameState.selectedCourse;
         const colName = getRankingCollectionName();
