@@ -307,7 +307,7 @@
 
     <div id="stacolle-result-panel" class="hidden mb-8 rounded-xl p-6 max-w-md mx-auto" style="background: rgba(255, 215, 0, 0.12); border: 2px solid rgba(255, 215, 0, 0.45);">
      <div class="font-jp text-lg mb-4" style="color: #ffd700;">スタコレ未反映コイン：<span id="stacolle-pending-coins-result">0</span>コイン</div>
-     <button id="stacolle-sync-btn" class="font-jp text-lg px-6 py-3 rounded-xl font-bold transition-all duration-300 hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed" style="background: linear-gradient(135deg, #ffd700 0%, #ffa500 100%); color: #000428; box-shadow: 0 0 20px rgba(255, 215, 0, 0.45);">スタコレにコインを反映</button>
+     <button id="stacolle-sync-btn" class="font-jp text-lg px-6 py-3 rounded-xl font-bold transition-all duration-300 hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed" style="background: linear-gradient(135deg, #ffd700 0%, #ffa500 100%); color: #000428; box-shadow: 0 0 20px rgba(255, 215, 0, 0.45);">スタコレにコインを反映させて戻る</button>
      <div id="stacolle-sync-status" class="font-jp text-sm mt-4 min-h-6" style="color: rgba(255,255,255,0.85);"></div>
     </div>
 
@@ -729,20 +729,22 @@
 
     const STACOLLE_PENDING_COINS_KEY = 'pendingStacolleScienceCoins';
     const STACOLLE_DAILY_COINS_KEY = 'stacolleScienceCoinsDailyTotal';
-    const STACOLLE_DAILY_MAX_COINS = 50;
+    const STACOLLE_DAILY_MAX_COINS = 150;
     const STACOLLE_PLAY_MAX_COINS = 30;
 
     let stacolleDb = null;
     let stacolleReady = false;
     let stacolleSyncInProgress = false;
 
-    // 【スタコレ側リンク設定メモ】
-    // スタコレからこのゲームを開くURLに、必ず stacolleUid をクエリパラメータとして付けます。
-    // 例: https://<理科タイピングのURL>/index.html?stacolleUid=<スタコレのユーザーUID>
-    // スタコレ側でリンクを作る場合は、上の <スタコレのユーザーUID> の位置にログイン中ユーザーのUIDを入れてください。
-    // このゲーム側では、下の URLSearchParams で stacolleUid を受け取った場合だけスタコレ連携UIを表示します。
+    function safeDecodeURIComponent(value) {
+      if (!value) return '';
+      try { return decodeURIComponent(value); }
+      catch (_) { return value; }
+    }
+
     const stacolleUrlParams = new URLSearchParams(window.location.search || '');
     const stacolleUid = String(stacolleUrlParams.get('stacolleUid') || '').trim();
+    const returnUrl = safeDecodeURIComponent(String(stacolleUrlParams.get('returnUrl') || '').trim());
     const isStacolleLinked = stacolleUid.length > 0;
 
     function sanitizeNonNegativeInteger(value) {
@@ -870,11 +872,21 @@
       btn.disabled = Boolean(disabled);
     }
 
-    async function syncPendingStacolleCoins() {
+    function returnToStacolleIfPossible() {
+      if (returnUrl) {
+        window.location.href = returnUrl;
+      } else {
+        setStacolleSyncStatus('スタコレに戻るURLが見つかりません', '#ffb74d');
+      }
+    }
+
+    async function syncPendingStacolleCoinsAndReturn() {
       if (!isStacolleLinked || stacolleSyncInProgress) return;
       const pendingCoins = readPendingStacolleCoins();
       if (pendingCoins <= 0) {
-        setStacolleSyncStatus('未反映コインはありません。', '#00ff88');
+        setStacolleSyncStatus('未反映コインはありません。スタコレに戻ります。', '#00ff88');
+        setStacolleSyncButtonDisabled(true);
+        returnToStacolleIfPossible();
         return;
       }
 
@@ -907,8 +919,8 @@
 
         writePendingStacolleCoins(0);
         updateStacolleCoinDisplays();
-        stacolleSyncInProgress = false;
-        setStacolleSyncStatus('反映しました。', '#00ff88');
+        setStacolleSyncStatus('反映しました。スタコレに戻ります。', '#00ff88');
+        returnToStacolleIfPossible();
       } catch (err) {
         console.error('Failed to sync Stacolle coins:', err);
         stacolleSyncInProgress = false;
@@ -1416,7 +1428,6 @@
 
       resultScreen.classList.add('hidden');
       gameScreen.classList.remove('hidden');
-      stacolleSyncInProgress = false;
       updateStacolleCoinDisplays();
       setStacolleSyncStatus('');
       setStacolleSyncButtonDisabled(false);
@@ -1777,7 +1788,7 @@
     });
 
     if (stacolleSyncBtn) {
-      stacolleSyncBtn.addEventListener('click', syncPendingStacolleCoins);
+      stacolleSyncBtn.addEventListener('click', syncPendingStacolleCoinsAndReturn);
     }
 
     document.addEventListener('keydown', handleInput);
