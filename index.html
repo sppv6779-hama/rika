@@ -234,6 +234,10 @@
       <div class="text-center"><div class="font-jp text-gray-400 text-sm mb-1">正確率</div><div id="accuracy" class="font-game text-3xl font-bold" style="color: #00ff88;">100%</div></div>
      </div>
 
+     <div id="stacolle-game-panel" class="hidden mb-6 rounded-xl p-3 text-center font-jp" style="background: rgba(255, 215, 0, 0.12); border: 2px solid rgba(255, 215, 0, 0.35); color: #ffd700;">
+      スタコレ未反映コイン：<span id="stacolle-pending-coins-game">0</span>コイン
+     </div>
+
      <!-- 看板（問題表示エリア） -->
      <div id="sign-board" class="sign-board rounded-3xl p-8 mb-6 relative">
       <div class="absolute top-4 left-1/2 transform -translate-x-1/2 font-jp text-sm" style="color: #ffd700;">🎯 看板 🎯</div>
@@ -299,6 +303,12 @@
     <div id="best-scores" class="mt-8 rounded-xl p-6 max-w-md mx-auto mb-8" style="background: rgba(0, 0, 0, 0.6); border: 2px solid rgba(0, 255, 255, 0.4);">
      <div class="font-jp text-lg mb-4 text-center" style="color: #ffd700;">🏆 トップ10ランキング 🏆</div>
      <div id="best-scores-list" class="font-jp text-sm space-y-2"></div>
+    </div>
+
+    <div id="stacolle-result-panel" class="hidden mb-8 rounded-xl p-6 max-w-md mx-auto" style="background: rgba(255, 215, 0, 0.12); border: 2px solid rgba(255, 215, 0, 0.45);">
+     <div class="font-jp text-lg mb-4" style="color: #ffd700;">スタコレ未反映コイン：<span id="stacolle-pending-coins-result">0</span>コイン</div>
+     <button id="stacolle-sync-btn" class="font-jp text-lg px-6 py-3 rounded-xl font-bold transition-all duration-300 hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed" style="background: linear-gradient(135deg, #ffd700 0%, #ffa500 100%); color: #000428; box-shadow: 0 0 20px rgba(255, 215, 0, 0.45);">スタコレにコインを反映させて戻る</button>
+     <div id="stacolle-sync-status" class="font-jp text-sm mt-4 min-h-6" style="color: rgba(255,255,255,0.85);"></div>
     </div>
 
     <button id="retry-btn" class="font-game text-2xl px-16 py-5 rounded-2xl font-bold transition-all duration-300 hover:scale-110" style="background: linear-gradient(135deg, #00ffff 0%, #0099ff 100%); color: #000428; box-shadow: 0 0 30px rgba(0, 255, 255, 0.6);"> 🚀 再挑戦 </button>
@@ -598,6 +608,8 @@
       correctTyped: 0,
       combo: 0,
       maxCombo: 0,
+      correctCount: 0,
+      playSessionId: null,
       timer: null,
       hintTimer: null,
       hintShown: false,
@@ -704,6 +716,219 @@
     let db = null;
     let firebaseReady = false;
 
+    const stacolleFirebaseConfig = {
+      apiKey: "AIzaSyA0L6b4ZF_ioSSklYpw4WufWLiYyTS58l8",
+      authDomain: "sutakore-40683.firebaseapp.com",
+      databaseURL: "https://sutakore-40683-default-rtdb.firebaseio.com",
+      projectId: "sutakore-40683",
+      storageBucket: "sutakore-40683.firebasestorage.app",
+      messagingSenderId: "306906901274",
+      appId: "1:306906901274:web:2011b162396ab211ac5aa3",
+      measurementId: "G-EFHSRD1NRJ"
+    };
+
+    const STACOLLE_PENDING_COINS_KEY = 'pendingStacolleScienceCoins';
+    const STACOLLE_DAILY_COINS_KEY = 'stacolleScienceCoinsDailyTotal';
+    const STACOLLE_DAILY_MAX_COINS = 150;
+    const STACOLLE_PLAY_MAX_COINS = 30;
+
+    let stacolleDb = null;
+    let stacolleReady = false;
+    let stacolleSyncInProgress = false;
+
+    function safeDecodeURIComponent(value) {
+      if (!value) return '';
+      try { return decodeURIComponent(value); }
+      catch (_) { return value; }
+    }
+
+    const stacolleUrlParams = new URLSearchParams(window.location.search || '');
+    const stacolleUid = String(stacolleUrlParams.get('stacolleUid') || '').trim();
+    const returnUrl = safeDecodeURIComponent(String(stacolleUrlParams.get('returnUrl') || '').trim());
+    const isStacolleLinked = stacolleUid.length > 0;
+
+    function sanitizeNonNegativeInteger(value) {
+      const num = Number(value);
+      if (!Number.isFinite(num) || Number.isNaN(num)) return 0;
+      return Math.max(0, Math.floor(num));
+    }
+
+    function getTodayKey() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function readPendingStacolleCoins() {
+      if (!isStacolleLinked) return 0;
+      try { return sanitizeNonNegativeInteger(localStorage.getItem(STACOLLE_PENDING_COINS_KEY)); }
+      catch (_) { return 0; }
+    }
+
+    function writePendingStacolleCoins(value) {
+      if (!isStacolleLinked) return;
+      const safeValue = sanitizeNonNegativeInteger(value);
+      try { localStorage.setItem(STACOLLE_PENDING_COINS_KEY, String(safeValue)); }
+      catch (err) { console.warn('Failed to write pending Stacolle coins:', err); }
+    }
+
+    function readDailyStacolleCoins() {
+      if (!isStacolleLinked) return 0;
+      try {
+        const parsed = JSON.parse(localStorage.getItem(STACOLLE_DAILY_COINS_KEY) || '{}');
+        if (!parsed || parsed.date !== getTodayKey()) return 0;
+        return sanitizeNonNegativeInteger(parsed.coins);
+      } catch (_) {
+        return 0;
+      }
+    }
+
+    function writeDailyStacolleCoins(value) {
+      if (!isStacolleLinked) return;
+      try {
+        localStorage.setItem(STACOLLE_DAILY_COINS_KEY, JSON.stringify({
+          date: getTodayKey(),
+          coins: sanitizeNonNegativeInteger(value)
+        }));
+      } catch (err) {
+        console.warn('Failed to write daily Stacolle coins:', err);
+      }
+    }
+
+    function calculateEarnedStacolleCoins(correctCount) {
+      const safeCorrectCount = sanitizeNonNegativeInteger(correctCount);
+      const dailyCoins = readDailyStacolleCoins();
+      const remainingDailyCoins = Math.max(0, STACOLLE_DAILY_MAX_COINS - dailyCoins);
+      return Math.min(safeCorrectCount, STACOLLE_PLAY_MAX_COINS, remainingDailyCoins);
+    }
+
+    function addPendingStacolleCoins(earnedCoins) {
+      if (!isStacolleLinked) return 0;
+      const safeEarnedCoins = sanitizeNonNegativeInteger(earnedCoins);
+      if (safeEarnedCoins <= 0) {
+        updateStacolleCoinDisplays();
+        return 0;
+      }
+      const pendingCoins = readPendingStacolleCoins();
+      writePendingStacolleCoins(pendingCoins + safeEarnedCoins);
+      writeDailyStacolleCoins(readDailyStacolleCoins() + safeEarnedCoins);
+      updateStacolleCoinDisplays();
+      return safeEarnedCoins;
+    }
+
+    function updateStacolleCoinDisplays() {
+      const pendingCoins = readPendingStacolleCoins();
+      const gamePanel = document.getElementById('stacolle-game-panel');
+      const resultPanel = document.getElementById('stacolle-result-panel');
+      const gameCoins = document.getElementById('stacolle-pending-coins-game');
+      const resultCoins = document.getElementById('stacolle-pending-coins-result');
+      if (gameCoins) gameCoins.textContent = String(pendingCoins);
+      if (resultCoins) resultCoins.textContent = String(pendingCoins);
+      if (gamePanel) gamePanel.classList.toggle('hidden', !isStacolleLinked);
+      if (resultPanel) resultPanel.classList.toggle('hidden', !isStacolleLinked);
+    }
+
+    function generatePlaySessionId() {
+      return 'typing_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    }
+
+    function generateSyncSessionId() {
+      return 'rikaTypingSync_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    }
+
+    function initStacolleFirebase() {
+      if (!isStacolleLinked) return false;
+      try {
+        if (!window.firebase || !firebase.initializeApp) throw new Error('Firebase SDK not loaded');
+        if (!firebase.firestore) throw new Error('Firebase firestore not available');
+        let stacolleApp = null;
+        if (firebase.apps && firebase.apps.length) {
+          stacolleApp = firebase.apps.find((app) => app.name === 'stacolle') || null;
+        }
+        if (!stacolleApp) stacolleApp = firebase.initializeApp(stacolleFirebaseConfig, 'stacolle');
+        stacolleDb = firebase.firestore(stacolleApp);
+        stacolleReady = true;
+        return true;
+      } catch (err) {
+        console.error('Stacolle Firebase init failed:', err);
+        stacolleDb = null;
+        stacolleReady = false;
+        return false;
+      }
+    }
+
+    function setStacolleSyncStatus(message, color = 'rgba(255,255,255,0.85)') {
+      const statusEl = document.getElementById('stacolle-sync-status');
+      if (!statusEl) return;
+      statusEl.textContent = message || '';
+      statusEl.style.color = color;
+    }
+
+    function setStacolleSyncButtonDisabled(disabled) {
+      const btn = document.getElementById('stacolle-sync-btn');
+      if (!btn) return;
+      btn.disabled = Boolean(disabled);
+    }
+
+    function returnToStacolleIfPossible() {
+      if (returnUrl) {
+        window.location.href = returnUrl;
+      } else {
+        setStacolleSyncStatus('スタコレに戻るURLが見つかりません', '#ffb74d');
+      }
+    }
+
+    async function syncPendingStacolleCoinsAndReturn() {
+      if (!isStacolleLinked || stacolleSyncInProgress) return;
+      const pendingCoins = readPendingStacolleCoins();
+      if (pendingCoins <= 0) {
+        setStacolleSyncStatus('未反映コインはありません。スタコレに戻ります。', '#00ff88');
+        setStacolleSyncButtonDisabled(true);
+        returnToStacolleIfPossible();
+        return;
+      }
+
+      stacolleSyncInProgress = true;
+      setStacolleSyncButtonDisabled(true);
+      setStacolleSyncStatus('反映中です...', '#ffd700');
+
+      try {
+        if (!stacolleReady || !stacolleDb) initStacolleFirebase();
+        if (!stacolleDb) throw new Error('Stacolle Firestore is not initialized.');
+
+        const syncSessionId = generateSyncSessionId();
+        const userRef = stacolleDb.collection('users').doc(stacolleUid);
+        const resultRef = userRef.collection('externalGameResults').doc(syncSessionId);
+        const serverTimestamp = firebase.firestore.FieldValue.serverTimestamp();
+
+        const batch = stacolleDb.batch();
+        batch.set(resultRef, {
+          source: 'rikaTyping',
+          subject: 'science',
+          syncSessionId: syncSessionId,
+          earnedCoins: pendingCoins,
+          reflectedAt: serverTimestamp
+        });
+        batch.update(userRef, {
+          'coins.science': firebase.firestore.FieldValue.increment(pendingCoins),
+          updatedAt: serverTimestamp
+        });
+        await batch.commit();
+
+        writePendingStacolleCoins(0);
+        updateStacolleCoinDisplays();
+        setStacolleSyncStatus('反映しました。スタコレに戻ります。', '#00ff88');
+        returnToStacolleIfPossible();
+      } catch (err) {
+        console.error('Failed to sync Stacolle coins:', err);
+        stacolleSyncInProgress = false;
+        setStacolleSyncButtonDisabled(false);
+        setStacolleSyncStatus('反映に失敗しました。もう一度押してください', '#ff6b9d');
+      }
+    }
+
     async function initFirebaseAndAuth() {
       try {
         if (!window.firebase || !firebase.initializeApp) throw new Error('Firebase SDK not loaded');
@@ -719,6 +944,7 @@
 
         db = firebase.firestore();
         firebaseReady = true;
+        initStacolleFirebase();
         return true;
       } catch (err) {
         console.error('Firebase init failed:', err);
@@ -1064,6 +1290,7 @@
     const nicknameForm = document.getElementById('nickname-form');
     const courseButtonsEl = document.getElementById('course-buttons');
     const rankingCourseTabsEl = document.getElementById('ranking-course-tabs');
+    const stacolleSyncBtn = document.getElementById('stacolle-sync-btn');
 
     function renderCourseButtons() {
       if (!courseButtonsEl) return;
@@ -1190,6 +1417,8 @@
         correctTyped: 0,
         combo: 0,
         maxCombo: 0,
+        correctCount: 0,
+        playSessionId: generatePlaySessionId(),
         timer: null,
         hintTimer: null,
         hintShown: false,
@@ -1199,6 +1428,9 @@
 
       resultScreen.classList.add('hidden');
       gameScreen.classList.remove('hidden');
+      updateStacolleCoinDisplays();
+      setStacolleSyncStatus('');
+      setStacolleSyncButtonDisabled(false);
 
       initializeGauge();
       updateScore();
@@ -1312,6 +1544,7 @@
 
       if (gameState.currentCharIndex >= gameState.romajiArray.length) {
         // 単語完成
+        gameState.correctCount = sanitizeNonNegativeInteger(gameState.correctCount) + 1;
         gameState.score += 50;
         // 💥 単語を打ち切った瞬間に爆発音
         playSfx('sfx-explosion', 0.55);
@@ -1499,6 +1732,9 @@
       const finalPlanet = getPlanetByScore(gameState.score);
       isTop10 = checkTop10(gameState.score);
 
+      const earnedStacolleCoins = calculateEarnedStacolleCoins(gameState.correctCount);
+      addPendingStacolleCoins(earnedStacolleCoins);
+
       gameScreen.classList.add('hidden');
       resultScreen.classList.remove('hidden');
 
@@ -1531,6 +1767,9 @@
       document.getElementById('final-accuracy').textContent = (gameState.totalTyped > 0 ? Math.round((gameState.correctTyped / gameState.totalTyped) * 100) : 100) + '%';
       document.getElementById('final-combo').textContent = gameState.maxCombo;
 
+      updateStacolleCoinDisplays();
+      setStacolleSyncStatus('');
+      setStacolleSyncButtonDisabled(false);
       updateBestScoresDisplay();
     }
 
@@ -1547,6 +1786,10 @@
       resultScreen.classList.add('hidden');
       courseScreen.classList.remove('hidden');
     });
+
+    if (stacolleSyncBtn) {
+      stacolleSyncBtn.addEventListener('click', syncPendingStacolleCoinsAndReturn);
+    }
 
     document.addEventListener('keydown', handleInput);
 
@@ -1657,6 +1900,7 @@
     }
 
     initializeVariantUi();
+    updateStacolleCoinDisplays();
 
     // Firebase初期化（順序を保証する）
     (async () => {
