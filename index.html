@@ -610,7 +610,7 @@
       ranking_collection: 'typing_scores',
       ranking_theme_key: 'space_tour',
       ranking_theme_label: '宇宙タイピングクエスト',
-      ranking_season: 'season_1',
+      ranking_season: 'season_R8',
       ranking_schema_version: 1,
       courses: [
         {
@@ -735,18 +735,27 @@
       return GAME_VARIANT.ranking_collection || 'typing_scores';
     }
 
-    // 旧データ互換：theme_key / season が未保存の過去レコードは
-    // 「現在のテーマ・シーズンのデータ」とみなして表示対象に含める。
-    function isCurrentThemeSeasonRecord(data) {
-      const theme = String((data && data.theme_key) || '').trim();
-      const season = String((data && data.season) || '').trim();
+  function isCurrentThemeSeasonRecord(data) {
+  const theme = String((data && data.theme_key) || '').trim();
 
-      const variantId = String((data && data.variant_id) || '').trim();
-      const themeMatched = (theme === '') || (theme === String(GAME_VARIANT.ranking_theme_key));
-      const seasonMatched = (season === '') || (season === String(GAME_VARIANT.ranking_season));
-      const variantMatched = (variantId === '') || (variantId === String(GAME_VARIANT.variant_id));
-      return themeMatched && seasonMatched && variantMatched;
-    }
+  // 🔥 ここを変更
+  const rawSeason = String((data && data.season) || '').trim();
+  const season = rawSeason === '' ? 'season_1' : rawSeason;
+
+  const variantId = String((data && data.variant_id) || '').trim();
+
+  const themeMatched =
+    (theme === '') || (theme === String(GAME_VARIANT.ranking_theme_key));
+
+  // 🔥 seasonは「空許可」ではなく「season_1扱い」で比較
+  const seasonMatched =
+    (season === String(GAME_VARIANT.ranking_season));
+
+  const variantMatched =
+    (variantId === '') || (variantId === String(GAME_VARIANT.variant_id));
+
+  return themeMatched && seasonMatched && variantMatched;
+}
 
 
     // Firestoreからコース別トップ10を取得
